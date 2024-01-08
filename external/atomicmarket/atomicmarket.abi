@@ -1,0 +1,1166 @@
+{
+    "____comment": "This file was generated with eosio-abigen. DO NOT EDIT ",
+    "version": "eosio::abi/1.1",
+    "types": [],
+    "structs": [
+        {
+            "name": "COUNTER_RANGE",
+            "base": "",
+            "fields": [
+                {
+                    "name": "counter_name",
+                    "type": "name"
+                },
+                {
+                    "name": "start_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "end_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "SYMBOLPAIR",
+            "base": "",
+            "fields": [
+                {
+                    "name": "listing_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "settlement_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "delphi_pair_name",
+                    "type": "name"
+                },
+                {
+                    "name": "invert_delphi_pair",
+                    "type": "bool"
+                }
+            ]
+        },
+        {
+            "name": "TOKEN",
+            "base": "",
+            "fields": [
+                {
+                    "name": "token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "token_symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "acceptbuyo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "buyoffer_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "expected_asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "expected_price",
+                    "type": "asset"
+                },
+                {
+                    "name": "taker_marketplace",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "addafeectr",
+            "base": "",
+            "fields": [
+                {
+                    "name": "bonusfee_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "counter_name_to_add",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "addbonusfee",
+            "base": "",
+            "fields": [
+                {
+                    "name": "fee_recipient",
+                    "type": "name"
+                },
+                {
+                    "name": "fee",
+                    "type": "float64"
+                },
+                {
+                    "name": "applicable_counter_names",
+                    "type": "name[]"
+                },
+                {
+                    "name": "fee_name",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "addconftoken",
+            "base": "",
+            "fields": [
+                {
+                    "name": "token_contract",
+                    "type": "name"
+                },
+                {
+                    "name": "token_symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "adddelphi",
+            "base": "",
+            "fields": [
+                {
+                    "name": "delphi_pair_name",
+                    "type": "name"
+                },
+                {
+                    "name": "invert_delphi_pair",
+                    "type": "bool"
+                },
+                {
+                    "name": "listing_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "settlement_symbol",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "announceauct",
+            "base": "",
+            "fields": [
+                {
+                    "name": "seller",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "starting_bid",
+                    "type": "asset"
+                },
+                {
+                    "name": "duration",
+                    "type": "uint32"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "announcesale",
+            "base": "",
+            "fields": [
+                {
+                    "name": "seller",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "listing_price",
+                    "type": "asset"
+                },
+                {
+                    "name": "settlement_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "assertauct",
+            "base": "",
+            "fields": [
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "asset_ids_to_assert",
+                    "type": "uint64[]"
+                }
+            ]
+        },
+        {
+            "name": "assertsale",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sale_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "asset_ids_to_assert",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "listing_price_to_assert",
+                    "type": "asset"
+                },
+                {
+                    "name": "settlement_symbol_to_assert",
+                    "type": "symbol"
+                }
+            ]
+        },
+        {
+            "name": "auctclaimbuy",
+            "base": "",
+            "fields": [
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "auctclaimsel",
+            "base": "",
+            "fields": [
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "auctionbid",
+            "base": "",
+            "fields": [
+                {
+                    "name": "bidder",
+                    "type": "name"
+                },
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "bid",
+                    "type": "asset"
+                },
+                {
+                    "name": "taker_marketplace",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "auctions_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "seller",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "end_time",
+                    "type": "uint32"
+                },
+                {
+                    "name": "assets_transferred",
+                    "type": "bool"
+                },
+                {
+                    "name": "current_bid",
+                    "type": "asset"
+                },
+                {
+                    "name": "current_bidder",
+                    "type": "name"
+                },
+                {
+                    "name": "claimed_by_seller",
+                    "type": "bool"
+                },
+                {
+                    "name": "claimed_by_buyer",
+                    "type": "bool"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                },
+                {
+                    "name": "taker_marketplace",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_name",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_fee",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
+            "name": "balances_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "quantities",
+                    "type": "asset[]"
+                }
+            ]
+        },
+        {
+            "name": "bonusfees_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "bonusfee_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "fee_recipient",
+                    "type": "name"
+                },
+                {
+                    "name": "fee",
+                    "type": "float64"
+                },
+                {
+                    "name": "counter_ranges",
+                    "type": "COUNTER_RANGE[]"
+                },
+                {
+                    "name": "fee_name",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "buyoffers_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "buyoffer_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "buyer",
+                    "type": "name"
+                },
+                {
+                    "name": "recipient",
+                    "type": "name"
+                },
+                {
+                    "name": "price",
+                    "type": "asset"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_name",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_fee",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
+            "name": "cancelauct",
+            "base": "",
+            "fields": [
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "cancelbuyo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "buyoffer_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "cancelsale",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sale_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "config_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "version",
+                    "type": "string"
+                },
+                {
+                    "name": "sale_counter",
+                    "type": "uint64"
+                },
+                {
+                    "name": "auction_counter",
+                    "type": "uint64"
+                },
+                {
+                    "name": "minimum_bid_increase",
+                    "type": "float64"
+                },
+                {
+                    "name": "minimum_auction_duration",
+                    "type": "uint32"
+                },
+                {
+                    "name": "maximum_auction_duration",
+                    "type": "uint32"
+                },
+                {
+                    "name": "auction_reset_duration",
+                    "type": "uint32"
+                },
+                {
+                    "name": "supported_tokens",
+                    "type": "TOKEN[]"
+                },
+                {
+                    "name": "supported_symbol_pairs",
+                    "type": "SYMBOLPAIR[]"
+                },
+                {
+                    "name": "maker_market_fee",
+                    "type": "float64"
+                },
+                {
+                    "name": "taker_market_fee",
+                    "type": "float64"
+                },
+                {
+                    "name": "atomicassets_account",
+                    "type": "name"
+                },
+                {
+                    "name": "delphioracle_account",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "convcounters",
+            "base": "",
+            "fields": []
+        },
+        {
+            "name": "counters_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "counter_name",
+                    "type": "name"
+                },
+                {
+                    "name": "counter_value",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "createbuyo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "buyer",
+                    "type": "name"
+                },
+                {
+                    "name": "recipient",
+                    "type": "name"
+                },
+                {
+                    "name": "price",
+                    "type": "asset"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "declinebuyo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "buyoffer_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "decline_memo",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "delbonusfee",
+            "base": "",
+            "fields": [
+                {
+                    "name": "bonusfee_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "init",
+            "base": "",
+            "fields": []
+        },
+        {
+            "name": "logauctstart",
+            "base": "",
+            "fields": [
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "lognewauct",
+            "base": "",
+            "fields": [
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "seller",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "starting_bid",
+                    "type": "asset"
+                },
+                {
+                    "name": "duration",
+                    "type": "uint32"
+                },
+                {
+                    "name": "end_time",
+                    "type": "uint32"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_name",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_fee",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
+            "name": "lognewbuyo",
+            "base": "",
+            "fields": [
+                {
+                    "name": "buyoffer_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "buyer",
+                    "type": "name"
+                },
+                {
+                    "name": "recipient",
+                    "type": "name"
+                },
+                {
+                    "name": "price",
+                    "type": "asset"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "memo",
+                    "type": "string"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_name",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_fee",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
+            "name": "lognewsale",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sale_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "seller",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "listing_price",
+                    "type": "asset"
+                },
+                {
+                    "name": "settlement_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_name",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_fee",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
+            "name": "logsalestart",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sale_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "offer_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "marketplaces_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "marketplace_name",
+                    "type": "name"
+                },
+                {
+                    "name": "creator",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "payauctram",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payer",
+                    "type": "name"
+                },
+                {
+                    "name": "auction_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "paybuyoram",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payer",
+                    "type": "name"
+                },
+                {
+                    "name": "buyoffer_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "paysaleram",
+            "base": "",
+            "fields": [
+                {
+                    "name": "payer",
+                    "type": "name"
+                },
+                {
+                    "name": "sale_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "purchasesale",
+            "base": "",
+            "fields": [
+                {
+                    "name": "buyer",
+                    "type": "name"
+                },
+                {
+                    "name": "sale_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "intended_delphi_median",
+                    "type": "uint64"
+                },
+                {
+                    "name": "taker_marketplace",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "regmarket",
+            "base": "",
+            "fields": [
+                {
+                    "name": "creator",
+                    "type": "name"
+                },
+                {
+                    "name": "marketplace_name",
+                    "type": "name"
+                }
+            ]
+        },
+        {
+            "name": "sales_s",
+            "base": "",
+            "fields": [
+                {
+                    "name": "sale_id",
+                    "type": "uint64"
+                },
+                {
+                    "name": "seller",
+                    "type": "name"
+                },
+                {
+                    "name": "asset_ids",
+                    "type": "uint64[]"
+                },
+                {
+                    "name": "offer_id",
+                    "type": "int64"
+                },
+                {
+                    "name": "listing_price",
+                    "type": "asset"
+                },
+                {
+                    "name": "settlement_symbol",
+                    "type": "symbol"
+                },
+                {
+                    "name": "maker_marketplace",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_name",
+                    "type": "name"
+                },
+                {
+                    "name": "collection_fee",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
+            "name": "setmarketfee",
+            "base": "",
+            "fields": [
+                {
+                    "name": "maker_market_fee",
+                    "type": "float64"
+                },
+                {
+                    "name": "taker_market_fee",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
+            "name": "setminbidinc",
+            "base": "",
+            "fields": [
+                {
+                    "name": "minimum_bid_increase",
+                    "type": "float64"
+                }
+            ]
+        },
+        {
+            "name": "setversion",
+            "base": "",
+            "fields": [
+                {
+                    "name": "new_version",
+                    "type": "string"
+                }
+            ]
+        },
+        {
+            "name": "stopbonusfee",
+            "base": "",
+            "fields": [
+                {
+                    "name": "bonusfee_id",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
+            "name": "withdraw",
+            "base": "",
+            "fields": [
+                {
+                    "name": "owner",
+                    "type": "name"
+                },
+                {
+                    "name": "token_to_withdraw",
+                    "type": "asset"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "name": "acceptbuyo",
+            "type": "acceptbuyo",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "addafeectr",
+            "type": "addafeectr",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "addbonusfee",
+            "type": "addbonusfee",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "addconftoken",
+            "type": "addconftoken",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "adddelphi",
+            "type": "adddelphi",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "announceauct",
+            "type": "announceauct",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "announcesale",
+            "type": "announcesale",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "assertauct",
+            "type": "assertauct",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "assertsale",
+            "type": "assertsale",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "auctclaimbuy",
+            "type": "auctclaimbuy",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "auctclaimsel",
+            "type": "auctclaimsel",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "auctionbid",
+            "type": "auctionbid",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cancelauct",
+            "type": "cancelauct",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cancelbuyo",
+            "type": "cancelbuyo",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "cancelsale",
+            "type": "cancelsale",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "convcounters",
+            "type": "convcounters",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "createbuyo",
+            "type": "createbuyo",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "declinebuyo",
+            "type": "declinebuyo",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "delbonusfee",
+            "type": "delbonusfee",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "init",
+            "type": "init",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "logauctstart",
+            "type": "logauctstart",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "lognewauct",
+            "type": "lognewauct",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "lognewbuyo",
+            "type": "lognewbuyo",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "lognewsale",
+            "type": "lognewsale",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "logsalestart",
+            "type": "logsalestart",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "payauctram",
+            "type": "payauctram",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "paybuyoram",
+            "type": "paybuyoram",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "paysaleram",
+            "type": "paysaleram",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "purchasesale",
+            "type": "purchasesale",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "regmarket",
+            "type": "regmarket",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setmarketfee",
+            "type": "setmarketfee",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setminbidinc",
+            "type": "setminbidinc",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "setversion",
+            "type": "setversion",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "stopbonusfee",
+            "type": "stopbonusfee",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "withdraw",
+            "type": "withdraw",
+            "ricardian_contract": ""
+        }
+    ],
+    "tables": [
+        {
+            "name": "auctions",
+            "type": "auctions_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "balances",
+            "type": "balances_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "bonusfees",
+            "type": "bonusfees_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "buyoffers",
+            "type": "buyoffers_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "config",
+            "type": "config_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "counters",
+            "type": "counters_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "marketplaces",
+            "type": "marketplaces_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "sales",
+            "type": "sales_s",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        }
+    ],
+    "ricardian_clauses": [],
+    "variants": []
+}

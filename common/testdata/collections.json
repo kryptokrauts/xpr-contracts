@@ -1,0 +1,141 @@
+{
+    "protonpunk" : {
+        "id": "zvapir55jvu4",
+        "allow_notify": true,
+        "authorized_accounts": [],
+        "notify_accounts": [],
+        "market_fee": 0.15,
+        "data": [
+            {"key": "name", "value": ["string", "Cypher Gang"]},
+            {"key": "img", "value": ["ipfs", "QmSDKsKvjzKycaGerfCU4aDyRpzy5NEm9cNe8Ej78YTe2j"]},
+            {"key": "description", "value": ["string", "www.CypherGang.com | Cypher Gang is an Original Hand-Crafted collection of 1777 Cypher Gang NFTs — Unique digital collectables with various utilities, activities, passive income and governance system for the holders. Your Cypher grants access to members-only benefits, the first of which is access to The CYPHER SYNDICATE"]},
+            {"key": "url", "value": ["string", "https://www.cyphergang.com"]}
+        ],
+        "nfts": [
+            {
+                "name": "Cypher #295",
+                "description": "",
+                "media_type": "image",
+                "media_hash": "QmRWuzZgznnJEepMJyVQbaAu4AdxgsRDVND368sMAX3zky",
+                "media_preview_image": null,
+                "edition": null
+            },
+            {
+                "name": "Cypher #292",
+                "description": "",
+                "media_type": "image",
+                "media_hash": "QmcLEHDBsS1DkvnV7ZFkkF2paQipFVwsLrefEdB2ZFSd5B",
+                "media_preview_image": null,
+                "edition": null
+            },
+            {
+                "name": "Cypher #288",
+                "description": "",
+                "media_type": "image",
+                "media_hash": "QmPFo9qnGgBz7suwmHqkSz3Xhv1nxuewgUhKZkieJGmcNy",
+                "media_preview_image": null,
+                "edition": null
+            }
+        ]
+    },
+    "pixelheroes": {
+        "id": "322142131552",
+        "allow_notify": true,
+        "authorized_accounts": [],
+        "notify_accounts": [],
+        "market_fee": 0.05,
+        "data": [
+            {"key": "name", "value": ["string", "Pixel Heroes - 2nd Edition"]},
+            {"key": "img", "value": ["ipfs", "QmZZbk33geQf7tF9MyEmbygDwtHwKv2Nk9fSVjwiMXG9C1"]},
+            {"key": "description", "value": ["string", "The 2nd Edition Release of Pixel Heroes! Learn more: pixelheroes.in"]}
+        ],
+        "nfts": [
+            {
+                "name": "Marshall",
+                "description": "Marshall - The Innovator. A legendary Pixel Heroes card.",
+                "media_type": "image",
+                "media_hash": "QmT8NQaVrm8A4pnmRYtogkSmGkd23AY9oVo948L5NJSbc4",
+                "media_preview_image": null,
+                "edition": {
+                    "size": 125,
+                    "mint_count": 7,
+                    "burnable": false
+                }
+            },
+            {
+                "name": "Will",
+                "description": "Will - The Herald. A legendary Pixel Heroes card.",
+                "media_type": "image",
+                "media_hash": "QmcNVp482Ea7wY3muENAzBgSCwry7BriP2yqjcTrTRJykx",
+                "media_preview_image": null,
+                "edition": {
+                    "size": 0,
+                    "mint_count": 12,
+                    "burnable": true
+                }
+            },
+            {
+                "name": "Irina",
+                "description": "Irina - The Brilliant. A 2nd edition legendary Pixel Heroes card",
+                "media_type": "image",
+                "media_hash": "QmSGe1JhrgLUofEx8xZ6Q7C1Z2FsJu7HjeG31ot7BP57C9",
+                "media_preview_image": null,
+                "edition": {
+                    "size": 0,
+                    "mint_count": 17,
+                    "burnable": true
+                }
+            },
+            {
+                "name": "Syed",
+                "description": "Syed- The Architect. A Legendary 2nd edition Pixel Hero",
+                "media_type": "image",
+                "media_hash": "QmaqFNhZ9tXCjPCh22h6BxtAq9JAot1ynbgqaySj3djthH",
+                "media_preview_image": null,
+                "edition": {
+                    "size": 0,
+                    "mint_count": 21,
+                    "burnable": true
+                }
+            }
+        ]
+    },
+    "powerofsoon": {
+        "id": "323154322551",
+        "allow_notify": true,
+        "authorized_accounts": [],
+        "notify_accounts": [],
+        "market_fee": 0.15,
+        "data": [
+            {"key": "name", "value": ["string", "SOON SPOT - Promotion"]},
+            {"key": "img", "value": ["ipfs", "QmabVFmyQaTiJ7ooPkp3KcL4HPfBpKiL7hwCHPoM9VLXXA"]},
+            {"key": "description", "value": ["string", "The SOON SPOT NFTs allow its holders to promote their favorite NFT collections or NFT auctions on the front page of Soon.Market! Auctions are always promoted until they end. Collections are promoted for 2 weeks (GOLD SPOT) or 1 week (SILVER SPOT)."]}
+        ],
+        "nfts": [
+            {
+                "name": "SOON SPOT - GOLD",
+                "description": "This NFT is unique and has a special utility on soon.market - forever! Its owner has the power to promote an auction of choice in the main spotlight on the front page of the market by redeeming it - whenever they want! It is not burnable and as soon as the promoted auction ends this NFT will be auctioned again to find a new owner.",
+                "media_type": "image",
+                "media_hash": "QmW85MY69oC1yWoLTivtGULySyNEAaC5kEaRtDZTuzN8YH",
+                "media_preview_image": null,
+                "edition": {
+                    "size": 1,
+                    "mint_count": 1,
+                    "burnable": false
+                }
+            },
+            {
+                "name": "SOON SPOT - SILVER",
+                "description": "This NFT has a potentially unlimited edition size but we will make sure only a reasonable amount will be in circulation. It will be distributed in various ways: auctions, airdrops, competitions, … The owner can use it to promote an auction of choice in the slider on the bottom of the front page by redeeming it. On redemption the NFT will be burned.",
+                "media_type": "image",
+                "media_hash": "QmW85MY69oC1yWoLTivtGULySyNEAaC5kEaRtDZTuzN8YH",
+                "media_preview_image": null,
+                "edition": {
+                    "size": 0,
+                    "mint_count": 21,
+                    "burnable": true
+                }
+            }
+        ]
+    }
+}
