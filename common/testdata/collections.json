@@ -59,7 +59,8 @@
                 "edition": {
                     "size": 125,
                     "mint_count": 7,
-                    "burnable": false
+                    "burnable": false,
+                    "transferable": true
                 }
             },
             {
@@ -71,7 +72,8 @@
                 "edition": {
                     "size": 0,
                     "mint_count": 12,
-                    "burnable": true
+                    "burnable": true,
+                    "transferable": true
                 }
             },
             {
@@ -83,7 +85,8 @@
                 "edition": {
                     "size": 0,
                     "mint_count": 17,
-                    "burnable": true
+                    "burnable": true,
+                    "transferable": true
                 }
             },
             {
@@ -95,7 +98,8 @@
                 "edition": {
                     "size": 0,
                     "mint_count": 21,
-                    "burnable": true
+                    "burnable": true,
+                    "transferable": true
                 }
             }
         ]
@@ -121,7 +125,8 @@
                 "edition": {
                     "size": 1,
                     "mint_count": 1,
-                    "burnable": false
+                    "burnable": false,
+                    "transferable": true
                 }
             },
             {
@@ -133,7 +138,8 @@
                 "edition": {
                     "size": 0,
                     "mint_count": 21,
-                    "burnable": true
+                    "burnable": true,
+                    "transferable": true
                 }
             }
         ]

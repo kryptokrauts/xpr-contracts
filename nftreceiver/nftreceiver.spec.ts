@@ -7,7 +7,7 @@ const blockchain = new Blockchain()
 /* Deploy Contracts */
 const atomicassets = blockchain.createContract('atomicassets', 'external/atomicassets/atomicassets')
 const atomicmarket = blockchain.createContract('atomicmarket', 'external/atomicmarket/atomicmarket')
-const nftreceiver = blockchain.createContract('nftreceiver', 'nftreceiver/target/nftreceiver')
+const nftreceiver = blockchain.createContract('nftreceiver', 'nftreceiver/target/nftreceiver.contract')
 
 /* Create Accounts */
 const [protonpunk, pixelheroes, powerofsoon] = blockchain.createAccounts('protonpunk', 'pixelheroes', 'powerofsoon')
@@ -25,6 +25,8 @@ beforeEach(async () => {
 /* Tests */
 describe('AtomicAssets', () => {
   it('Burn on Receive', async () => {
-    // TODO
+    console.log(nftreceiver.isContract.toString())
+    console.log(atomicassets.isContract.toString())
+    await nftreceiver.actions.printstorage().send()
   });
 });

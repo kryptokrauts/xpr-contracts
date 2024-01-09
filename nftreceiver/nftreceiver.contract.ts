@@ -1,17 +1,31 @@
-import { Name, Contract } from "proton-tsc"
+import { Name, Contract, printStorage, print, TableStore, check } from "proton-tsc"
+import { AtomicValue, AtomicAttribute, deserialize, AtomicFormat, ATOMICASSETS_CONTRACT, Assets, Collections, Config, Schemas, Templates } from 'proton-tsc/atomicassets'
 
 @contract
 class NftReceiver extends Contract {
     contract: Name = this.receiver
 
     @action("transfer", notify)
-    handleIncomingNfts(from: Name, to: Name, asset_ids: u64[], memo: string): void {
+    onReceive(from: Name, to: Name, asset_ids: u64[], memo: string): void {
         // Skip if outgoing
         if (from == this.contract) {
             return;
         }
-        // TODO need to check if it is really incoming? (see docs example)
+        // Only handle incoming
+        if (to == this.contract) {
+            if (memo.includes('collection')) {
+                print(memo)
+                print(asset_ids.toString())
+            }
+            else {
+                const assetTable = new TableStore<Assets>(ATOMICASSETS_CONTRACT, this.contract)
+                print('no need to handle')
+            }
+        }
+    }
 
-        // TODO example with burn logic
+    @action("printstorage")
+    printstorage(): void {
+        printStorage()
     }
 }

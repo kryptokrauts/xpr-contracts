@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { Account, Blockchain } from "@proton/vert";
+import { Account, Blockchain, nameToBigInt } from "@proton/vert";
 
 const defaultSchema = [
     { "name": "name", "type": "string" },
@@ -13,7 +13,7 @@ export const initContracts = async (blockchain: Blockchain, ...contracts: Array<
     blockchain.enableStorageDeltas()
     for(const contract of contracts) {
         await contract.actions.init().send()
-        if(isDebug){
+        if (isDebug) {
             blockchain.printStorageDeltas()
         }
     }
@@ -50,7 +50,7 @@ export const createTestCollection = async (blockchain: Blockchain, atomicassets:
         0.15,
         []
     ]).send(`${creatorName}@active`)
-    if(isDebug){
+    if (isDebug) {
         blockchain.printStorageDeltas()
     }
 
@@ -61,29 +61,59 @@ export const createTestCollection = async (blockchain: Blockchain, atomicassets:
         collection.id, // using same name as collection id is the common approach on XPR Network
         defaultSchema,
     ]).send(`${creatorName}@active`)
-    if(isDebug){
+    if (isDebug) {
         blockchain.printStorageDeltas()
     }
 
     // nfts
-    for(const nft of collection.nfts) {
-        let templateId = -1 // minting unique asset without a template
-        if (nft.edition)
-        await atomicassets.actions.mintasset([
-            creatorName,
-            collection.id,
-            collection.id,
-            templateId,
-            creatorName,
-            [
-                { "key": "name", "value": ["string", nft.name]},
-                { "key": "image", "value": ["string", nft.media_hash]},
-                { "key": "description", "value": ["string", nft.description]},
-            ],
-            [], // mutable attributes
-            [] // tokens to back
-        ]).send(`${creatorName}@active`)
-        if(isDebug){
+    for (const nft of collection.nfts) {
+        if (nft.edition) {
+            await atomicassets.actions.createtempl([
+                creatorName,
+                collection.id,
+                collection.id,
+                nft.edition.transferable,
+                nft.edition.burnable,
+                nft.edition.size,
+                [
+                    { "key": "name", "value": ["string", nft.name]},
+                    { "key": "image", "value": ["string", nft.media_hash]},
+                    { "key": "description", "value": ["string", nft.description]},
+                ],
+            ]).send(`${creatorName}@active`)
+            if (isDebug) {
+                blockchain.printStorageDeltas()
+            }
+            const lastTemplateRow = atomicassets.tables.templates(nameToBigInt(collection.id)).getTableRows().reverse()[0]
+            for(let i=0; i<nft.edition.mint_count; i++) {
+                await atomicassets.actions.mintasset([
+                    creatorName,
+                    collection.id,
+                    collection.id,
+                    lastTemplateRow.template_id,
+                    creatorName,
+                    [], // immutable attributes (not needed as those are defined in template already)
+                    [], // mutable attributes
+                    [] // tokens to back
+                ]).send(`${creatorName}@active`)
+            }
+        } else {
+            await atomicassets.actions.mintasset([
+                creatorName,
+                collection.id,
+                collection.id,
+                -1, // minting unique asset without a template
+                creatorName,
+                [
+                    { "key": "name", "value": ["string", nft.name]},
+                    { "key": "image", "value": ["string", nft.media_hash]},
+                    { "key": "description", "value": ["string", nft.description]},
+                ],
+                [], // mutable attributes
+                [] // tokens to back
+            ]).send(`${creatorName}@active`)
+        }
+        if (isDebug) {
             blockchain.printStorageDeltas()
         }
     }
