@@ -28,7 +28,6 @@
       "esm": true
     },
     "exclude": [
-      "./node_modules/*",
-      "./external/*"
+      "./node_modules/*"
     ]
   }

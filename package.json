@@ -6,9 +6,9 @@
   "license": "MIT",
   "scripts": {
     "build": "run-p build:*",
-    "build:nftreceiver": "proton-asc ./nftreceiver/nftreceiver.contract.ts",
+    "build:soonmarket": "proton-asc ./soonmarket/soonmarket.contract.ts",
     "test": "run-p test:*",
-    "test:nftreceiver": "mocha -s 250 ./nftreceiver/*.spec.ts -r ts-node/register"
+    "test:soonmarket": "mocha -s 250 ./soonmarket/*.spec.ts -r ts-node/register"
   },
   "devDependencies": {
     "@proton/vert": "0.3.24",
