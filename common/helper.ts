@@ -20,6 +20,20 @@ export const initContracts = async (blockchain: Blockchain, ...contracts: Array<
     blockchain.disableStorageDeltas()
 }
 
+export const transferNft = async(
+    atomicassets: Account,
+    sender: Account,
+    recipient: Account,
+    nfts: Array<Number>,
+    memo: string) => {
+        return atomicassets.actions.transfer([
+            sender.name.toString(),
+            recipient.name.toString(),
+            nfts,
+            memo
+        ]).send(`${sender.name.toString()}@active`)
+}
+
 export const initialAdminColEdit = async (atomicassets: Account) => {
     atomicassets.actions.admincoledit([
         [
@@ -34,10 +48,12 @@ export const initialAdminColEdit = async (atomicassets: Account) => {
     ]).send()
 }
 
-export const createTestCollection = async (blockchain: Blockchain, atomicassets: Account, creator: Account) => {
+export const createTestCollection = async (blockchain: Blockchain, atomicassets: Account, creator: Account, recipient?: Account) => {
     const testCollections = JSON.parse(fs.readFileSync(`common/testdata/collections.json`, 'utf-8'))
     const creatorName = creator.name.toString()
     const collection = testCollections[creatorName]
+
+    const recipientName = recipient ? recipient.name.toString() : creatorName
 
     blockchain.enableStorageDeltas()
     // collection
@@ -91,7 +107,7 @@ export const createTestCollection = async (blockchain: Blockchain, atomicassets:
                     collection.id,
                     collection.id,
                     lastTemplateRow.template_id,
-                    creatorName,
+                    recipientName,
                     [], // immutable attributes (not needed as those are defined in template already)
                     [], // mutable attributes
                     [] // tokens to back
@@ -103,7 +119,7 @@ export const createTestCollection = async (blockchain: Blockchain, atomicassets:
                 collection.id,
                 collection.id,
                 -1, // minting unique asset without a template
-                creatorName,
+                recipientName,
                 [
                     { "key": "name", "value": ["string", nft.name]},
                     { "key": "image", "value": ["string", nft.media_hash]},

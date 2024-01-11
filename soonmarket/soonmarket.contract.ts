@@ -1,6 +1,6 @@
 // import { Auctions } from "external/atomicmarket/tables.ts"
 import { Name, Contract, printStorage, print, TableStore, check } from "proton-tsc"
-import { ATOMICASSETS_CONTRACT, Assets, Collections, sendBurnAsset, sendTransferNfts } from 'proton-tsc/atomicassets'
+import { ATOMICASSETS_CONTRACT, Assets, Collections, sendTransferNfts } from 'proton-tsc/atomicassets'
 
 function validateCollection(collectionId: string): void {
     new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(Name.fromString(collectionId).N, 'collection to promote not exists')
@@ -15,11 +15,11 @@ function validateCollection(collectionId: string): void {
 
 function validateAndHandleSpot(sender: Name, assetId: u64, memo: string): void {
     if (assetId == <u64>1099511627776) { // gold spot
-        sendTransferNfts(sender, ATOMICASSETS_CONTRACT, [assetId], memo)
+        sendTransferNfts(sender, Name.fromString('powerofsoon'), [assetId], memo)
     } else {
-        const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, sender).requireGet(assetId, 'asset not a SPOT NFT')
-        check(2 == asset.template_id, 'invalid NFT, Silver SPOT expected')
-        sendBurnAsset(sender, sender, assetId)
+        const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, sender).requireGet(assetId, 'asset not found')
+        check(2 == asset.template_id, 'invalid NFT - Silver SPOT expected')
+        sendTransferNfts(sender, Name.fromString('powerofsoon'), [assetId], memo)
     }
 }
 
