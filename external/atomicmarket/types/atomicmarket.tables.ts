@@ -1,13 +1,14 @@
-import { EMPTY_NAME, ExtendedAsset, Name, Table } from "proton-tsc"
+import { EMPTY_NAME, ExtendedAsset, Name, Table } from "proton-tsc";
 
+// Scope: N/A
 @table("auctions", noabigen)
 export class Auctions extends Table {
-    constructor(
+    constructor (
         public auction_id: u64 = 0,
         public seller: Name = EMPTY_NAME,
         public asset_ids: u64[] = [],
         public end_time: u32 = 0,
-        public assets_transferred?: bool,
+        public assets_transferred: boolean = false,
         public current_bid: ExtendedAsset = new ExtendedAsset(),
         public current_bidder: Name = EMPTY_NAME,
         public claimed_by_seller: boolean = false,

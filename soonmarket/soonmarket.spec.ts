@@ -76,7 +76,7 @@ describe('SoonMarket', () => {
     })
   })
   describe('happy paths', () => {
-    it('promotion of Cypher Gang', async () => {
+    it('promotion of Cypher Gang via Silver Spot', async () => {
       const silverSpotId = "1099511627777"
       // Spot NFT owned by marco
       let silverSpotAsset = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpotId)
@@ -86,6 +86,14 @@ describe('SoonMarket', () => {
       // NFT should be owned by powerofsoon now
       silverSpotAsset = atomicassets.tables.assets(nameToBigInt(powerofsoon.name)).getTableRow(silverSpotId)
       expect(silverSpotAsset).to.be.not.undefined
+    })
+    it('test atomicmarket interaction', async () => {
+      blockchain.enableStorageDeltas()
+      await atomicmarket.actions.setversion([
+        '1.3.3.7'
+      ]).send(`${atomicmarket.name.toString()}@active`)
+      blockchain.printStorageDeltas()
+      blockchain.disableStorageDeltas()
     })
   })
 })

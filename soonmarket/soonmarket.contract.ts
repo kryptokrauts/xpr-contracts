@@ -1,6 +1,9 @@
-// import { Auctions } from "external/atomicmarket/tables.ts"
+
 import { Name, Contract, printStorage, print, TableStore, check } from "proton-tsc"
 import { ATOMICASSETS_CONTRACT, Assets, Collections, sendTransferNfts } from 'proton-tsc/atomicassets'
+
+// import { ATOMICMARKET_CONTRACT } from "./../external/atomicmarket/types/atomicmarket.constants"
+// import { Auctions } from "./../external/atomicmarket/types/atomicmarket.tables"
 
 function validateCollection(collectionId: string): void {
     new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(Name.fromString(collectionId).N, 'collection to promote not exists')
@@ -8,13 +11,14 @@ function validateCollection(collectionId: string): void {
 }
 
 // function validateAuction(auctionId: string) {
-//     const auction = new TableStore<Auctions>(Name.fromString('atomicmarket')).requireGet(Number(auctionId), 'auction not found')
+//     const auctionIdTest: u64 = 123434
+//     const auction = new TableStore<Auctions>(ATOMICMARKET_CONTRACT).requireGet(auctionIdTest, 'auction not found')
 //     new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(auction.collection_name.N, 'collection not found')
 //     // TODO check if collection is shielded :-)
 // }
 
 function validateAndHandleSpot(sender: Name, assetId: u64, memo: string, promoType: string): void {
-    if (assetId == <u64>1099511627776) { // gold spot
+    if (assetId == 1099511627776) { // gold spot
         sendTransferNfts(sender, Name.fromString('powerofsoon'), [assetId], memo)
     } else {
         check('collection' == promoType, 'invalid promotion type - expected collection promotion')
@@ -44,10 +48,10 @@ class SoonMarket extends Contract {
             check(promoType == 'collection' || promoType == 'auction', 'unknown promotion type')
             if (promoType == 'collection') {
                 validateCollection(memoWords[1])
-                // TODO log action
+                // TODO logcolpromo (collectionId, promoter, duration)
                 print('log collection promotion')
             } else { // auction
-                // TODO log action
+                // TODO logauctpromo (auctionId, promoter, expectedEnd)
                 print('log auction promotion')
                 // TODO
                 // validateAuction(memoWords[1])
