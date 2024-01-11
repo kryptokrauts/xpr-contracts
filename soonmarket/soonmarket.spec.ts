@@ -56,6 +56,12 @@ describe('SoonMarket', () => {
         )
       })
     })
+    it('reject with invalid promoType', async () => {
+      await expectToThrow(
+        transferNft(atomicassets, marco, soonmarket, [1099511627777], 'auction 1337'),
+        eosio_assert('invalid promotion type - expected collection promotion')
+      )
+    })
     it('reject with non existing collection', async () => {
       await expectToThrow(
         transferNft(atomicassets, marco, soonmarket, [1099511627777], 'collection colnotexists'),

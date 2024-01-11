@@ -13,10 +13,11 @@ function validateCollection(collectionId: string): void {
 //     // TODO check if collection is shielded :-)
 // }
 
-function validateAndHandleSpot(sender: Name, assetId: u64, memo: string): void {
+function validateAndHandleSpot(sender: Name, assetId: u64, memo: string, promoType: string): void {
     if (assetId == <u64>1099511627776) { // gold spot
         sendTransferNfts(sender, Name.fromString('powerofsoon'), [assetId], memo)
     } else {
+        check('collection' == promoType, 'invalid promotion type - expected collection promotion')
         const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, sender).requireGet(assetId, 'asset not found')
         check(2 == asset.template_id, 'invalid NFT - Silver SPOT expected')
         sendTransferNfts(sender, Name.fromString('powerofsoon'), [assetId], memo)
@@ -51,7 +52,7 @@ class SoonMarket extends Contract {
                 // TODO
                 // validateAuction(memoWords[1])
             }
-            validateAndHandleSpot(this.contract, asset_ids[0], memo)
+            validateAndHandleSpot(this.contract, asset_ids[0], memo, promoType)
         }
     }
 
