@@ -49,23 +49,23 @@ describe('SoonMarket', () => {
           eosio_assert('invalid word count in memo')
         )
       })
-      it('unknown promotion type', async () => {
+      it('invalid promotion type', async () => {
         await expectToThrow(
           transferNft(atomicassets, marco, soonmarket, [1099511627777], 'offer zvapir55jvu4'),
-          eosio_assert('unknown promotion type')
+          eosio_assert('invalid promotion type')
         )
       })
-    })
-    it('reject with invalid promoType', async () => {
-      await expectToThrow(
-        transferNft(atomicassets, marco, soonmarket, [1099511627777], 'auction 1337'),
-        eosio_assert('invalid promotion type - expected collection promotion')
-      )
     })
     it('reject with non existing collection', async () => {
       await expectToThrow(
         transferNft(atomicassets, marco, soonmarket, [1099511627777], 'collection colnotexists'),
-        eosio_assert('collection to promote not exists')
+        eosio_assert('collection not exists')
+      )
+    })
+    it('reject auction promotion with silver spot', async () => {
+      await expectToThrow(
+        transferNft(atomicassets, marco, soonmarket, [1099511627777], 'auction 1337'),
+        eosio_assert('invalid promotion type - auction only allowed for Gold SPOT')
       )
     })
     it('reject if templateId not a Silver Spot', async () => {
@@ -86,14 +86,6 @@ describe('SoonMarket', () => {
       // NFT should be owned by powerofsoon now
       silverSpotAsset = atomicassets.tables.assets(nameToBigInt(powerofsoon.name)).getTableRow(silverSpotId)
       expect(silverSpotAsset).to.be.not.undefined
-    })
-    it('test atomicmarket interaction', async () => {
-      blockchain.enableStorageDeltas()
-      await atomicmarket.actions.setversion([
-        '1.3.3.7'
-      ]).send(`${atomicmarket.name.toString()}@active`)
-      blockchain.printStorageDeltas()
-      blockchain.disableStorageDeltas()
     })
   })
 })
