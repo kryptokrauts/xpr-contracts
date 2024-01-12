@@ -8,10 +8,7 @@
     "noUnusedLocals": false,
     "noImplicitReturns": true,
     "baseUrl": "./",
-    // "paths": {
-    //   "atomicmarket": ["./external/atomicmarket/types/*"],
-    //   "common": ["./common/*"]
-    // },
+    // "paths": {},
     "typeRoots": [
       "node_modules/@types",
       "node_modules/assemblyscript/std",

@@ -1,24 +1,12 @@
 import fs from 'fs'
 import { Account, Blockchain, nameToBigInt } from "@proton/vert";
+import { isDebug } from './common.ts';
 
 const defaultSchema = [
     { "name": "name", "type": "string" },
     { "name": "image", "type": "string" },
     { "name": "description", "type": "string" }
 ]
-
-const isDebug = false // enable to printStorageDeltas
-
-export const initContracts = async (blockchain: Blockchain, ...contracts: Array<Account>) => {
-    blockchain.enableStorageDeltas()
-    for(const contract of contracts) {
-        await contract.actions.init().send()
-        if (isDebug) {
-            blockchain.printStorageDeltas()
-        }
-    }
-    blockchain.disableStorageDeltas()
-}
 
 export const transferNft = async(
     atomicassets: Account,
@@ -49,7 +37,7 @@ export const initialAdminColEdit = async (atomicassets: Account) => {
 }
 
 export const createTestCollection = async (blockchain: Blockchain, atomicassets: Account, creator: Account, recipient?: Account) => {
-    const testCollections = JSON.parse(fs.readFileSync(`common/testdata/collections.json`, 'utf-8'))
+    const testCollections = JSON.parse(fs.readFileSync('testdata/collections.json', 'utf-8'))
     const creatorName = creator.name.toString()
     const collection = testCollections[creatorName]
 
