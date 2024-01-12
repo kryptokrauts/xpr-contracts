@@ -2,20 +2,20 @@
 import { Name, Contract, printStorage, print, TableStore, check } from "proton-tsc"
 import { ATOMICASSETS_CONTRACT, Assets, Collections, sendTransferNfts } from 'proton-tsc/atomicassets'
 
-// import { ATOMICMARKET_CONTRACT } from "./../external/atomicmarket/types/atomicmarket.constants"
-// import { Auctions } from "./../external/atomicmarket/types/atomicmarket.tables"
+import { ATOMICMARKET_CONTRACT } from "../external/atomicmarket/atomicmarket.constants"
+import { Auctions } from "../external/atomicmarket/atomicmarket.tables"
 
 function validateCollection(collectionId: string): void {
     new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(Name.fromString(collectionId).N, 'collection to promote not exists')
     // TODO check if collection is shielded :-)
 }
 
-// function validateAuction(auctionId: string) {
-//     const auctionIdTest: u64 = 123434
-//     const auction = new TableStore<Auctions>(ATOMICMARKET_CONTRACT).requireGet(auctionIdTest, 'auction not found')
-//     new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(auction.collection_name.N, 'collection not found')
-//     // TODO check if collection is shielded :-)
-// }
+function validateAuction(auctionId: string): void {
+    const auctionIdTest: u64 = 123434
+    const auction = new TableStore<Auctions>(ATOMICMARKET_CONTRACT).requireGet(auctionIdTest, 'auction not found')
+    const collection = new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(auction.collection_name.N, 'collection not found')
+    // TODO check if collection is shielded :-)
+}
 
 function validateAndHandleSpot(sender: Name, assetId: u64, memo: string, promoType: string): void {
     if (assetId == 1099511627776) { // gold spot
