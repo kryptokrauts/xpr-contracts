@@ -1,7 +1,8 @@
 import { Blockchain, expectToThrow, mintTokens, nameToBigInt } from "@proton/vert"
 import { expect } from "chai";
+import { LOAN, METAL, XBTC, XDOGE, XETH, XMD, XMT, XUSDC, eosio_assert, initContracts } from "../helpers/common.ts";
 import { createTestCollection, initialAdminColEdit, transferNft } from "../helpers/atomicassets.helper.ts"
-import { initContracts } from "../helpers/common.ts";
+import { addTokens } from "../helpers/atomicmarket.helper.ts";
 import { ERROR_COLLECTION_NOT_EXISTS, ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED, ERROR_INVALID_PROMOTION_TYPE, ERROR_INVALID_PROMOTION_TYPE_AUCTION_GOLD_ONLY, ERROR_INVALID_WORD_COUNT, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED } from "./soonmarket.constants.ts";
 
 /* Create Blockchain */
@@ -29,19 +30,19 @@ beforeEach(async () => {
   await createTestCollection(blockchain, atomicassets, protonpunk)
   await createTestCollection(blockchain, atomicassets, pixelheroes)
   // tokens
-  await mintTokens(xtokens, 'XBTC', 8, 21000000.00000000, 5, [marco, mitch])
-  await mintTokens(xtokens, 'XETH', 8, 100000000.00000000, 20, [marco, mitch])
-  await mintTokens(xtokens, 'XDOGE', 6, 128303944202.000000, 100000, [marco, mitch])
-  await mintTokens(xtokens, 'XUSDC', 6, 2588268654.848330, 20000, [marco, mitch])
-  await mintTokens(xtokens, 'XMT', 8, 66588888.00000000, 5000, [marco, mitch])
-  await mintTokens(xtokens, 'METAL', 8, 666666666.00000000, 20000, [marco, mitch])
-  await mintTokens(loanToken, 'LOAN', 4, 100000000.0000, 20000, [marco, mitch]) // how to define unlimited?
-  await mintTokens(xmdToken, 'XMD', 6, 100000000.000000, 20000, [marco, mitch]) // how to define unlimited?
+  await mintTokens(xtokens, XBTC.name, XBTC.precision, 21000000.00000000, 5, [marco, mitch])
+  await mintTokens(xtokens, XETH.name, XETH.precision, 100000000.00000000, 20, [marco, mitch])
+  await mintTokens(xtokens, XDOGE.name, XDOGE.precision, 128303944202.000000, 100000, [marco, mitch])
+  await mintTokens(xtokens, XUSDC.name, XUSDC.precision, 2588268654.848330, 20000, [marco, mitch])
+  await mintTokens(xtokens, XMT.name, XMT.precision, 66588888.00000000, 5000, [marco, mitch])
+  await mintTokens(xtokens, METAL.name, METAL.precision, 666666666.00000000, 20000, [marco, mitch])
+  await mintTokens(loanToken, LOAN.name, LOAN.precision, 100000000.0000, 20000, [marco, mitch]) // how to define unlimited?
+  await mintTokens(xmdToken, XMD.name, XMD.precision, 100000000.000000, 20000, [marco, mitch]) // how to define unlimited?
+  // add tokens in atomicmarket config
+  await addTokens(blockchain, atomicmarket, xtokens, [XBTC, XETH, XDOGE, XUSDC, XMT, METAL])
+  await addTokens(blockchain, atomicmarket, loanToken, [LOAN])
+  await addTokens(blockchain, atomicmarket, xmdToken, [XMD])
 })
-
-const eosio_assert = (expectedErrorMsg: string): string => {
-  return `eosio_assert: ${expectedErrorMsg}`
-}
 
 /* Tests */
 describe('SoonMarket', () => {

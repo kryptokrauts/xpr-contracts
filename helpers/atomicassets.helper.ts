@@ -8,18 +8,19 @@ const defaultSchema = [
     { "name": "description", "type": "string" }
 ]
 
-export const transferNft = async(
+export const transferNft = async (
     atomicassets: Account,
     sender: Account,
     recipient: Account,
     nfts: Array<Number>,
-    memo: string) => {
-        return atomicassets.actions.transfer([
-            sender.name.toString(),
-            recipient.name.toString(),
-            nfts,
-            memo
-        ]).send(`${sender.name.toString()}@active`)
+    memo: string
+) => {
+    return atomicassets.actions.transfer([
+        sender.name.toString(),
+        recipient.name.toString(),
+        nfts,
+        memo
+    ]).send(`${sender.name.toString()}@active`)
 }
 
 export const initialAdminColEdit = async (atomicassets: Account) => {
