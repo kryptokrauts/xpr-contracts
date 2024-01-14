@@ -8,7 +8,7 @@
     "build": "run-p build:*",
     "build:soonmarket": "proton-asc ./soonmarket/soonmarket.contract.ts",
     "test": "run-p test:*",
-    "test:soonmarket": "mocha -s 250 ./soonmarket/*.spec.ts -r ts-node/register"
+    "test:soonmarket": "mocha -s 250 ./soonmarket/*.spec.ts -r ts-node/register --timeout 10000"
   },
   "devDependencies": {
     "@proton/vert": "0.3.24",

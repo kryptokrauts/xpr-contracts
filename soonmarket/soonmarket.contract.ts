@@ -1,10 +1,17 @@
 
-import { Name, Contract, printStorage, print, TableStore, check } from "proton-tsc"
+import { Name, Contract, printStorage, print, TableStore, check } from 'proton-tsc'
 import { ATOMICASSETS_CONTRACT, Assets, Collections, sendTransferNfts } from 'proton-tsc/atomicassets'
 
-import { ATOMICMARKET_CONTRACT } from "../external/atomicmarket/atomicmarket.constants"
-import { Auctions } from "../external/atomicmarket/atomicmarket.tables"
-import { ERROR_AUCTION_NOT_EXISTS, ERROR_COLLECTION_NOT_EXISTS, ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED, ERROR_INVALID_PROMOTION_TYPE, ERROR_INVALID_PROMOTION_TYPE_AUCTION_GOLD_ONLY, ERROR_INVALID_WORD_COUNT, ERROR_NOT_ALLOWED_AUCTION_NOT_STARTED, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED } from "./soonmarket.constants"
+import { ATOMICMARKET_CONTRACT } from '../external/atomicmarket/atomicmarket.constants'
+import { Auctions } from '../external/atomicmarket/atomicmarket.tables'
+import {
+    ERROR_AUCTION_NOT_EXISTS,
+    ERROR_COLLECTION_NOT_EXISTS,
+    ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED,
+    ERROR_INVALID_PROMOTION_TYPE,
+    ERROR_INVALID_PROMOTION_TYPE_AUCTION_GOLD_ONLY,
+    ERROR_INVALID_WORD_COUNT, ERROR_AUCTION_NOT_STARTED,
+    ERROR_ONLY_ONE_SPOT_NFT_ALLOWED } from './soonmarket.constants'
 
 function isValidPromotionType(value: string): boolean {
     const validPromotionTypes = ['auction', 'collection']
@@ -12,17 +19,16 @@ function isValidPromotionType(value: string): boolean {
 }
 
 function validateAuction(auctionId: string): number {
-    const auctionIdTyped = u64(Number.parseInt(auctionId))
-    const auction = new TableStore<Auctions>(ATOMICMARKET_CONTRACT).requireGet(auctionIdTyped, ERROR_AUCTION_NOT_EXISTS)
+    const auction = new TableStore<Auctions>(ATOMICMARKET_CONTRACT).requireGet(<u64>parseInt(auctionId), ERROR_AUCTION_NOT_EXISTS)
     const collection = new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(auction.collection_name.N, ERROR_COLLECTION_NOT_EXISTS)
-    // TODO check if collection is shielded :-)
-    check(auction.assets_transferred, ERROR_NOT_ALLOWED_AUCTION_NOT_STARTED)
+    // TODO check if collection is shielded / verified
+    check(auction.assets_transferred, ERROR_AUCTION_NOT_STARTED)
     return auction.end_time
 }
 
 function validateCollection(collectionId: string): void {
     new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(Name.fromString(collectionId).N, ERROR_COLLECTION_NOT_EXISTS)
-    // TODO check if collection is shielded :-)
+    // TODO check if collection is shielded / verified
 }
 
 function validateAndHandleSpot(soonmarket: Name, spotNftId: u64, promoType: string, promoTargetId: string, promotedBy: Name, ): void {
@@ -51,7 +57,7 @@ function validateAndHandleSpot(soonmarket: Name, spotNftId: u64, promoType: stri
 class SoonMarket extends Contract {
     contract: Name = this.receiver
 
-    @action("transfer", notify)
+    @action('transfer', notify)
     onReceive(from: Name, to: Name, asset_ids: u64[], memo: string): void {
         // Skip outgoing NFT transfers
         if (from == this.contract) {
@@ -68,7 +74,7 @@ class SoonMarket extends Contract {
         }
     }
 
-    @action("printstorage")
+    @action('printstorage')
     printstorage(): void {
         printStorage()
     }

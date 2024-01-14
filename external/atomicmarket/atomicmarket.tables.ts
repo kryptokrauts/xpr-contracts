@@ -1,4 +1,4 @@
-import { EMPTY_NAME, ExtendedAsset, Name, Table } from "proton-tsc";
+import { Asset, EMPTY_NAME, Name, Table } from "proton-tsc";
 
 // Scope: N/A
 @table("auctions", noabigen)
@@ -9,7 +9,7 @@ export class Auctions extends Table {
         public asset_ids: u64[] = [],
         public end_time: u32 = 0,
         public assets_transferred: boolean = false,
-        public current_bid: ExtendedAsset = new ExtendedAsset(),
+        public current_bid: Asset = new Asset(),
         public current_bidder: Name = EMPTY_NAME,
         public claimed_by_seller: boolean = false,
         public claimed_by_buyer: boolean = false,

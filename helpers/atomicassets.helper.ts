@@ -1,50 +1,59 @@
 import fs from 'fs'
-import { Account, Blockchain, nameToBigInt } from "@proton/vert";
-import { isDebug } from './common.ts';
+import { Account, nameToBigInt } from '@proton/vert';
+
+export interface NFT {
+    asset_id?: string,
+    collection_name?: string,
+    schema_name?: string,
+    template_id?: u32,
+    ram_payer?: string,
+    backed_tokens?: string,
+    immutable_serialized_data?: any,
+    mutable_serialized_data?: any
+}
 
 const defaultSchema = [
-    { "name": "name", "type": "string" },
-    { "name": "image", "type": "string" },
-    { "name": "description", "type": "string" }
+    { 'name': 'name', 'type': 'string' },
+    { 'name': 'image', 'type': 'string' },
+    { 'name': 'description', 'type': 'string' }
 ]
 
-export const transferNft = async (
+export const transferNfts = async (
     atomicassets: Account,
     sender: Account,
     recipient: Account,
-    nfts: Array<Number>,
+    nfts: Array<NFT>,
     memo: string
 ) => {
-    return atomicassets.actions.transfer([
+    await atomicassets.actions.transfer([
         sender.name.toString(),
         recipient.name.toString(),
-        nfts,
+        nfts.map(a => Number.parseInt(a.asset_id!)),
         memo
     ]).send(`${sender.name.toString()}@active`)
 }
 
 export const initialAdminColEdit = async (atomicassets: Account) => {
-    atomicassets.actions.admincoledit([
+    await atomicassets.actions.admincoledit([
         [
-          { "name": "name", "type": "string" },
-          { "name": "img", "type": "ipfs" },
-          { "name": "description", "type": "string" },
-          { "name": "url", "type": "string" },
-          { "name": "images", "type": "string" },
-          { "name": "socials", "type": "string" },
-          { "name": "creator_info", "type": "string" },
+          { 'name': 'name', 'type': 'string' },
+          { 'name': 'img', 'type': 'ipfs' },
+          { 'name': 'description', 'type': 'string' },
+          { 'name': 'url', 'type': 'string' },
+          { 'name': 'images', 'type': 'string' },
+          { 'name': 'socials', 'type': 'string' },
+          { 'name': 'creator_info', 'type': 'string' },
         ]
     ]).send()
 }
 
-export const createTestCollection = async (blockchain: Blockchain, atomicassets: Account, creator: Account, recipient?: Account) => {
+export const createTestCollection = async (atomicassets: Account, creator: Account, recipient?: Account) => {
     const testCollections = JSON.parse(fs.readFileSync('testdata/collections.json', 'utf-8'))
     const creatorName = creator.name.toString()
     const collection = testCollections[creatorName]
 
     const recipientName = recipient ? recipient.name.toString() : creatorName
 
-    blockchain.enableStorageDeltas()
     // collection
     await atomicassets.actions.createcol([
         creatorName,
@@ -55,9 +64,6 @@ export const createTestCollection = async (blockchain: Blockchain, atomicassets:
         0.15,
         []
     ]).send(`${creatorName}@active`)
-    if (isDebug) {
-        blockchain.printStorageDeltas()
-    }
 
     // schema
     await atomicassets.actions.createschema([
@@ -66,9 +72,6 @@ export const createTestCollection = async (blockchain: Blockchain, atomicassets:
         collection.id, // using same name as collection id is the common approach on XPR Network
         defaultSchema,
     ]).send(`${creatorName}@active`)
-    if (isDebug) {
-        blockchain.printStorageDeltas()
-    }
 
     // nfts
     for (const nft of collection.nfts) {
@@ -81,14 +84,11 @@ export const createTestCollection = async (blockchain: Blockchain, atomicassets:
                 nft.edition.burnable,
                 nft.edition.size,
                 [
-                    { "key": "name", "value": ["string", nft.name]},
-                    { "key": "image", "value": ["string", nft.media_hash]},
-                    { "key": "description", "value": ["string", nft.description]},
+                    { 'key': 'name', 'value': ['string', nft.name]},
+                    { 'key': 'image', 'value': ['string', nft.media_hash]},
+                    { 'key': 'description', 'value': ['string', nft.description]},
                 ],
             ]).send(`${creatorName}@active`)
-            if (isDebug) {
-                blockchain.printStorageDeltas()
-            }
             const lastTemplateRow = atomicassets.tables.templates(nameToBigInt(collection.id)).getTableRows().reverse()[0]
             for(let i=0; i<nft.edition.mint_count; i++) {
                 await atomicassets.actions.mintasset([
@@ -110,17 +110,13 @@ export const createTestCollection = async (blockchain: Blockchain, atomicassets:
                 -1, // minting unique asset without a template
                 recipientName,
                 [
-                    { "key": "name", "value": ["string", nft.name]},
-                    { "key": "image", "value": ["string", nft.media_hash]},
-                    { "key": "description", "value": ["string", nft.description]},
+                    { 'key': 'name', 'value': ['string', nft.name]},
+                    { 'key': 'image', 'value': ['string', nft.media_hash]},
+                    { 'key': 'description', 'value': ['string', nft.description]},
                 ],
                 [], // mutable attributes
                 [] // tokens to back
             ]).send(`${creatorName}@active`)
         }
-        if (isDebug) {
-            blockchain.printStorageDeltas()
-        }
     }
-    blockchain.disableStorageDeltas()
 }
