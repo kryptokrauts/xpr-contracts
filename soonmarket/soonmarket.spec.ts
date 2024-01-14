@@ -11,7 +11,10 @@ import {
   ERROR_INVALID_PROMOTION_TYPE_AUCTION_GOLD_ONLY,
   ERROR_INVALID_WORD_COUNT,
   ERROR_AUCTION_NOT_STARTED,
-  ERROR_ONLY_ONE_SPOT_NFT_ALLOWED } from './soonmarket.constants.ts'
+  ERROR_ONLY_ONE_SPOT_NFT_ALLOWED, 
+  ONE_HOUR,
+  ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION,
+  ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET} from './soonmarket.constants.ts'
 
 const blockchain = new Blockchain()
 
@@ -130,6 +133,27 @@ describe('SoonMarket', () => {
       await expectToThrow(
         transferNfts(atomicassets, marco, soonmarket, [goldSpot], `auction ${auction.auction_id}`),
         eosio_assert(ERROR_AUCTION_NOT_STARTED)
+      )
+    })
+    it('reject if remaining auction time is too low or expired', async () => {
+      const invalidRemainingTime = ONE_HOUR - 1
+      await announceAuction(atomicmarket, protonpunk, [cypherToAuction], 1337, XPR, invalidRemainingTime, soonmarket, atomicassets, true)
+      const auction: Auction = atomicmarket.tables.auctions().getTableRows(undefined, { limit: 1 })[0]
+      await expectToThrow(
+        transferNfts(atomicassets, marco, soonmarket, [goldSpot], `auction ${auction.auction_id}`),
+        eosio_assert(ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION)
+      )
+
+      // TODO test for expired auction
+    })
+    it('expect log actions to fail if called from other account', async () => {
+      await expectToThrow(
+        soonmarket.actions.logauctpromo([1, marco.name, 'gold', Math.round(Date.now() / 1000)]).send('marco@active'),
+        ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET
+      )
+      await expectToThrow(
+        soonmarket.actions.logcolpromo([1, marco.name, 'gold', Math.round(Date.now() / 1000)]).send('marco@active'),
+        ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET
       )
     })
   })

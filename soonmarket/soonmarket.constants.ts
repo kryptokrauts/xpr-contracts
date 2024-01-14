@@ -9,6 +9,9 @@ export const ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED: string = 'invalid nft - sil
 export const ERROR_AUCTION_NOT_STARTED: string = 'auction not started yet'
 export const ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION: string = 'auction expired or close to expiration'
 
+// error missing authority
+export const ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET: string = 'missing required authority soonmarket'
+
 // hardcoded values
 export const SILVER_SPOT_AUCTIONS_ENABLED = true // TODO remove once we update code for new market
 
