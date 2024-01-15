@@ -1,22 +1,22 @@
-import fs from 'fs'
-import { Account, nameToBigInt } from '@proton/vert'
+import fs from 'fs';
+import { Account, nameToBigInt } from '@proton/vert';
 
 export interface NFT {
-    asset_id?: string
-    collection_name?: string
-    schema_name?: string
-    template_id?: u32
-    ram_payer?: string
-    backed_tokens?: string
-    immutable_serialized_data?: any
-    mutable_serialized_data?: any
+    asset_id: string;
+    collection_name: string;
+    schema_name: string;
+    template_id: u32;
+    ram_payer?: string;
+    backed_tokens?: string;
+    immutable_serialized_data?: any;
+    mutable_serialized_data?: any;
 }
 
 const defaultSchema = [
     { name: 'name', type: 'string' },
     { name: 'image', type: 'string' },
     { name: 'description', type: 'string' },
-]
+];
 
 export const transferNfts = async (
     atomicassets: Account,
@@ -32,8 +32,8 @@ export const transferNfts = async (
             nfts.map((a) => Number.parseInt(a.asset_id!)),
             memo,
         ])
-        .send(`${sender.name.toString()}@active`)
-}
+        .send(`${sender.name.toString()}@active`);
+};
 
 export const initialAdminColEdit = async (atomicassets: Account) => {
     await atomicassets.actions
@@ -48,34 +48,20 @@ export const initialAdminColEdit = async (atomicassets: Account) => {
                 { name: 'creator_info', type: 'string' },
             ],
         ])
-        .send()
-}
+        .send();
+};
 
-export const createTestCollection = async (
-    atomicassets: Account,
-    creator: Account,
-    recipient?: Account,
-) => {
-    const testCollections = JSON.parse(
-        fs.readFileSync('testdata/collections.json', 'utf-8'),
-    )
-    const creatorName = creator.name.toString()
-    const collection = testCollections[creatorName]
+export const createTestCollection = async (atomicassets: Account, creator: Account, recipient?: Account) => {
+    const testCollections = JSON.parse(fs.readFileSync('testdata/collections.json', 'utf-8'));
+    const creatorName = creator.name.toString();
+    const collection = testCollections[creatorName];
 
-    const recipientName = recipient ? recipient.name.toString() : creatorName
+    const recipientName = recipient ? recipient.name.toString() : creatorName;
 
     // collection
     await atomicassets.actions
-        .createcol([
-            creatorName,
-            collection.id,
-            collection.allow_notify,
-            [creatorName],
-            [creatorName],
-            0.15,
-            [],
-        ])
-        .send(`${creatorName}@active`)
+        .createcol([creatorName, collection.id, collection.allow_notify, [creatorName], [creatorName], 0.15, []])
+        .send(`${creatorName}@active`);
 
     // schema
     await atomicassets.actions
@@ -85,7 +71,7 @@ export const createTestCollection = async (
             collection.id, // using same name as collection id is the common approach on XPR Network
             defaultSchema,
         ])
-        .send(`${creatorName}@active`)
+        .send(`${creatorName}@active`);
 
     // nfts
     for (const nft of collection.nfts) {
@@ -107,11 +93,11 @@ export const createTestCollection = async (
                         },
                     ],
                 ])
-                .send(`${creatorName}@active`)
+                .send(`${creatorName}@active`);
             const lastTemplateRow = atomicassets.tables
                 .templates(nameToBigInt(collection.id))
                 .getTableRows()
-                .reverse()[0]
+                .reverse()[0];
             for (let i = 0; i < nft.edition.mint_count; i++) {
                 await atomicassets.actions
                     .mintasset([
@@ -124,7 +110,7 @@ export const createTestCollection = async (
                         [], // mutable attributes
                         [], // tokens to back
                     ])
-                    .send(`${creatorName}@active`)
+                    .send(`${creatorName}@active`);
             }
         } else {
             await atomicassets.actions
@@ -145,7 +131,7 @@ export const createTestCollection = async (
                     [], // mutable attributes
                     [], // tokens to back
                 ])
-                .send(`${creatorName}@active`)
+                .send(`${creatorName}@active`);
         }
     }
-}
+};

@@ -1,5 +1,5 @@
-import { Table, Name } from 'proton-tsc'
-import { ONE_WEEK, TWO_WEEKS } from './soonmarket.constants'
+import { Table, Name } from 'proton-tsc';
+import { ONE_WEEK, TWO_WEEKS } from './soonmarket.constants';
 
 @table('globals', singleton)
 export class Globals extends Table {
@@ -13,7 +13,7 @@ export class Globals extends Table {
         public goldSpotId: u64 = 4398046764318, // mainnet value
         public silverSpotTemplateId: u32 = 51066, // mainnet value
     ) {
-        super()
+        super();
     }
 }
 
@@ -25,12 +25,12 @@ export class CollectionsBlacklist extends Table {
         public comment: string = '',
         public references: Array<string> = [],
     ) {
-        super()
+        super();
     }
 
     @primary
     get primary(): u64 {
-        return this.collection.N
+        return this.collection.N;
     }
 }
 
@@ -42,11 +42,11 @@ export class CollectionsVerified extends Table {
         public comment: string = '',
         public references: Array<string> = [],
     ) {
-        super()
+        super();
     }
 
     @primary
     get primary(): u64 {
-        return this.collection.N
+        return this.collection.N;
     }
 }

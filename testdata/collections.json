@@ -9,10 +9,7 @@
             { "key": "name", "value": ["string", "Cypher Gang"] },
             {
                 "key": "img",
-                "value": [
-                    "ipfs",
-                    "QmSDKsKvjzKycaGerfCU4aDyRpzy5NEm9cNe8Ej78YTe2j"
-                ]
+                "value": ["ipfs", "QmSDKsKvjzKycaGerfCU4aDyRpzy5NEm9cNe8Ej78YTe2j"]
             },
             {
                 "key": "description",
@@ -63,17 +60,11 @@
             },
             {
                 "key": "img",
-                "value": [
-                    "ipfs",
-                    "QmZZbk33geQf7tF9MyEmbygDwtHwKv2Nk9fSVjwiMXG9C1"
-                ]
+                "value": ["ipfs", "QmZZbk33geQf7tF9MyEmbygDwtHwKv2Nk9fSVjwiMXG9C1"]
             },
             {
                 "key": "description",
-                "value": [
-                    "string",
-                    "The 2nd Edition Release of Pixel Heroes! Learn more: pixelheroes.in"
-                ]
+                "value": ["string", "The 2nd Edition Release of Pixel Heroes! Learn more: pixelheroes.in"]
             }
         ],
         "nfts": [
@@ -141,10 +132,7 @@
             { "key": "name", "value": ["string", "SOON SPOT - Promotion"] },
             {
                 "key": "img",
-                "value": [
-                    "ipfs",
-                    "QmabVFmyQaTiJ7ooPkp3KcL4HPfBpKiL7hwCHPoM9VLXXA"
-                ]
+                "value": ["ipfs", "QmabVFmyQaTiJ7ooPkp3KcL4HPfBpKiL7hwCHPoM9VLXXA"]
             },
             {
                 "key": "description",

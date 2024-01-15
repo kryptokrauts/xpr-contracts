@@ -1,4 +1,4 @@
-import { Asset, EMPTY_NAME, Name, Table } from 'proton-tsc'
+import { Asset, EMPTY_NAME, Name, Table } from 'proton-tsc';
 
 // Scope: N/A
 @table('auctions', noabigen)
@@ -18,11 +18,11 @@ export class Auctions extends Table {
         public collection_name: Name = EMPTY_NAME,
         public collection_fee: f64 = <f64>0,
     ) {
-        super()
+        super();
     }
 
     @primary
     get primary(): u64 {
-        return this.auction_id
+        return this.auction_id;
     }
 }

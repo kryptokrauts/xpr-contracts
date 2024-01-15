@@ -1,4 +1,4 @@
-import { ActionData, InlineAction, Name, PermissionLevel } from 'proton-tsc'
+import { ActionData, InlineAction, Name, PermissionLevel } from 'proton-tsc';
 
 // Create packer class for object to send
 @packer
@@ -9,7 +9,7 @@ export class LogCollectionPromotion extends ActionData {
         public spotType: string = '',
         public promotionEnd: u32 = 0,
     ) {
-        super()
+        super();
     }
 }
 
@@ -22,7 +22,7 @@ export class LogAuctionPromotion extends ActionData {
         public spotType: string = '',
         public promotionEnd: u32 = 0,
     ) {
-        super()
+        super();
     }
 }
 
@@ -33,31 +33,15 @@ export function sendLogColPromo(
     spotType: string,
     promotionEnd: u32,
 ): void {
-    const LOG_COL_PROMO = new InlineAction<LogCollectionPromotion>(
-        'logcolpromo',
-    )
-    const action = LOG_COL_PROMO.act(contract, new PermissionLevel(contract))
-    const actionParams = new LogCollectionPromotion(
-        collection,
-        promotedBy,
-        spotType,
-        promotionEnd,
-    )
-    action.send(actionParams)
+    const LOG_COL_PROMO = new InlineAction<LogCollectionPromotion>('logcolpromo');
+    const action = LOG_COL_PROMO.act(contract, new PermissionLevel(contract));
+    const actionParams = new LogCollectionPromotion(collection, promotedBy, spotType, promotionEnd);
+    action.send(actionParams);
 }
 
-export function sendLogAuctPromo(
-    contract: Name,
-    auctionId: string,
-    promotedBy: Name,
-    spotType: string,
-): void {
-    const LOG_AUCT_PROMO = new InlineAction<LogAuctionPromotion>('logauctpromo')
-    const action = LOG_AUCT_PROMO.act(contract, new PermissionLevel(contract))
-    const actionParams = new LogAuctionPromotion(
-        auctionId,
-        promotedBy,
-        spotType,
-    )
-    action.send(actionParams)
+export function sendLogAuctPromo(contract: Name, auctionId: string, promotedBy: Name, spotType: string): void {
+    const LOG_AUCT_PROMO = new InlineAction<LogAuctionPromotion>('logauctpromo');
+    const action = LOG_AUCT_PROMO.act(contract, new PermissionLevel(contract));
+    const actionParams = new LogAuctionPromotion(auctionId, promotedBy, spotType);
+    action.send(actionParams);
 }
