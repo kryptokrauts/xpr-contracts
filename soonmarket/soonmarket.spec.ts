@@ -152,7 +152,7 @@ describe('SoonMarket', () => {
         ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET
       )
       await expectToThrow(
-        soonmarket.actions.logcolpromo([1, marco.name, 'gold', Math.round(Date.now() / 1000)]).send('marco@active'),
+        soonmarket.actions.logcolpromo(['dogelover', marco.name, 'gold', Math.round(Date.now() / 1000)]).send('marco@active'),
         ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET
       )
     })
