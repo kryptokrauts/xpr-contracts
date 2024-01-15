@@ -44,7 +44,7 @@ function validateCollection(collectionId: string): void {
     // TODO check if collection is shielded / verified
 }
 
-function validateAndHandleSpot(spotNftId: u64, promoType: string, promoTargetId: string, promotedBy: Name, ): void {
+function validateAndHandleSpot(spotNftId: u64, promoType: string, promoTargetId: string, promotedBy: Name): void {
     let spotType: string
     if ('auction' == promoType) {
         // TODO remove silver spot check in new market
@@ -113,10 +113,5 @@ class SoonMarket extends Contract {
     @action('logauctpromo')
     logAuctionPromotion(auctionId: string, promotedBy: Name, spotType: string, promotionEnd: u32): void {
         requireAuth(currentReceiver())
-    }
-
-    @action('printstorage')
-    printstorage(): void {
-        printStorage()
     }
 }
