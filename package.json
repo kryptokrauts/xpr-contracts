@@ -8,7 +8,10 @@
     "build": "run-p build:*",
     "build:soonmarket": "proton-asc ./soonmarket/soonmarket.contract.ts",
     "test": "run-p test:*",
-    "test:soonmarket": "mocha -s 250 ./soonmarket/*.spec.ts -r ts-node/register --timeout 10000"
+    "test:soonmarket": "mocha -s 250 ./soonmarket/*.spec.ts -r ts-node/register --timeout 10000",
+    "format": "prettier -w .",
+    "format:check": "prettier -c .",
+    "pre-commit": "format"
   },
   "devDependencies": {
     "@proton/vert": "0.3.24",
@@ -17,6 +20,7 @@
     "@types/node": "20.10.6",
     "chai": "5.0.0",
     "mocha": "10.2.0",
+    "prettier": "^3.2.2",
     "proton-tsc": "0.3.58",
     "ts-node": "10.9.2",
     "typescript": "5.3.3",
