@@ -1,4 +1,4 @@
 {
-  "extensions": ["ts"],
-  "node-option": ["loader=ts-node/esm"]
+    "extensions": ["ts"],
+    "node-option": ["loader=ts-node/esm"]
 }

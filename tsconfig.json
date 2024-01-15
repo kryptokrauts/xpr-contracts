@@ -1,27 +1,27 @@
 {
-  "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "alwaysStrict": true,
-    "noUnusedLocals": false,
-    "noImplicitReturns": true,
-    "baseUrl": "./",
-    // "paths": {},
-    "typeRoots": ["node_modules/@types", "node_modules/assemblyscript/std"],
-    "types": ["assembly", "node", "chai", "mocha"],
-    "allowJs": false,
-    "allowImportingTsExtensions": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "skipLibCheck": true,
-    "declaration": true,
-    "noEmit": true
-  },
-  "ts-node": {
-    "esm": true
-  },
-  "exclude": ["./node_modules/*"]
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "Node",
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "alwaysStrict": true,
+        "noUnusedLocals": false,
+        "noImplicitReturns": true,
+        "baseUrl": "./",
+        // "paths": {},
+        "typeRoots": ["node_modules/@types", "node_modules/assemblyscript/std"],
+        "types": ["assembly", "node", "chai", "mocha"],
+        "allowJs": false,
+        "allowImportingTsExtensions": true,
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "skipLibCheck": true,
+        "declaration": true,
+        "noEmit": true
+    },
+    "ts-node": {
+        "esm": true
+    },
+    "exclude": ["./node_modules/*"]
 }
