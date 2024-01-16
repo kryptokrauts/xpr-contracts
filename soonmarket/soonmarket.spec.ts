@@ -211,7 +211,7 @@ describe('SoonMarket', () => {
             it('expect log actions to fail if called from other account', async () => {
                 await expectToThrow(
                     soonmarket.actions
-                        .logauctpromo([1, marco.name, 'gold', Math.round(Date.now() / 1000)])
+                        .logauctpromo([1, marco.name, 'gold'])
                         .send('marco@active'),
                     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
                 );

@@ -147,7 +147,7 @@ class SoonMarket extends Contract {
     }
 
     @action('logauctpromo')
-    logAuctionPromotion(auctionId: string, promotedBy: Name, spotType: string, promotionEnd: u32): void {
+    logAuctionPromotion(auctionId: string, promotedBy: Name, spotType: string): void {
         requireAuth(currentReceiver());
     }
 
