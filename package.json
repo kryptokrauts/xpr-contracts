@@ -10,8 +10,7 @@
         "test": "run-p test:*",
         "test:soonmarket": "mocha -s 250 ./soonmarket/*.spec.ts -r ts-node/register --timeout 10000",
         "format": "prettier -w .",
-        "format:check": "prettier -c .",
-        "pre-commit": "format"
+        "format:check": "prettier -c ."
     },
     "devDependencies": {
         "@proton/vert": "0.3.24",

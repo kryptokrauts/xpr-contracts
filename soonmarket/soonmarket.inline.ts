@@ -19,7 +19,7 @@ export class LogAuctionPromotion extends ActionData {
     constructor(
         public auctionId: string = '',
         public promotedBy: Name = new Name(),
-        public spotType: string = ''
+        public spotType: string = '',
     ) {
         super();
     }

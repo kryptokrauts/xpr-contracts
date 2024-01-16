@@ -28,6 +28,13 @@ import {
     ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION,
     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
     ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED,
+    ERROR_COLLECTION_NOT_BLACKLISTED,
+    CYPHER_GANG,
+    PIXELHEROES,
+    ERROR_COLLECTION_BLACKLISTED,
+    ERROR_COLLECTION_ALREADY_BLACKLISTED,
+    ERROR_COLLECTION_NOT_VERIFIED,
+    ERROR_COLLECTION_ALREADY_VERIFIED,
 } from './soonmarket.constants.ts';
 
 const blockchain = new Blockchain();
@@ -96,8 +103,10 @@ beforeEach(async () => {
     await soonmarket.actions.setspots([Number.parseInt(goldSpot.asset_id), silverSpots[0].template_id]).send();
     // add verified collection
     await soonmarket.actions
-        .addverified(['zvapir55jvu4', 'testing cool shit here :-)', ['https://cyphergang.com']])
+        .addverified([CYPHER_GANG, 'testing cool shit here :-)', ['https://cyphergang.com']])
         .send();
+    // add blacklisted collection
+    await soonmarket.actions.addblacklist([PIXELHEROES, 'testing cool shit here :-)', []]).send();
     blockchain.disableStorageDeltas();
 });
 
@@ -106,7 +115,7 @@ describe('SoonMarket', () => {
         describe('revert paths', () => {
             it('reject with transfer of more than 1 spot nft', async () => {
                 await expectToThrow(
-                    transferNfts(atomicassets, marco, soonmarket, silverSpots, 'collection zvapir55jvu4'),
+                    transferNfts(atomicassets, marco, soonmarket, silverSpots, `collection ${CYPHER_GANG}`),
                     eosio_assert(ERROR_ONLY_ONE_SPOT_NFT_ALLOWED),
                 );
             });
@@ -125,7 +134,7 @@ describe('SoonMarket', () => {
                 });
                 it('invalid promotion type', async () => {
                     await expectToThrow(
-                        transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], 'offer zvapir55jvu4'),
+                        transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], `offer ${CYPHER_GANG}`),
                         eosio_assert(ERROR_INVALID_PROMOTION_TYPE),
                     );
                 });
@@ -151,14 +160,22 @@ describe('SoonMarket', () => {
                     'wrong template id for the test, needs to be the same as silver spot',
                 );
                 await expectToThrow(
-                    transferNfts(atomicassets, pixelheroes, soonmarket, [pixelheroNft], 'collection zvapir55jvu4'),
+                    transferNfts(atomicassets, pixelheroes, soonmarket, [pixelheroNft], `collection ${CYPHER_GANG}`),
                     eosio_assert(ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED),
                 );
             });
-            it('reject if collection is neither verified nor shielded', async () => {
+            it('reject if collection is blacklisted', async () => {
                 let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[0].asset_id);
                 await expectToThrow(
-                    transferNfts(atomicassets, marco, soonmarket, [spotNft], 'collection 322142131552'),
+                    transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${PIXELHEROES}`),
+                    eosio_assert(ERROR_COLLECTION_BLACKLISTED),
+                );
+            });
+            it('reject if collection is neither verified nor shielded', async () => {
+                await soonmarket.actions.delblacklist([PIXELHEROES]).send();
+                let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[0].asset_id);
+                await expectToThrow(
+                    transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${PIXELHEROES}`),
                     eosio_assert(ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED),
                 );
             });
@@ -210,9 +227,7 @@ describe('SoonMarket', () => {
             });
             it('expect log actions to fail if called from other account', async () => {
                 await expectToThrow(
-                    soonmarket.actions
-                        .logauctpromo([1, marco.name, 'gold'])
-                        .send('marco@active'),
+                    soonmarket.actions.logauctpromo([1, marco.name, 'gold']).send('marco@active'),
                     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
                 );
                 await expectToThrow(
@@ -301,6 +316,34 @@ describe('SoonMarket', () => {
             xit('promotion of NFT collection via gold spot', async () => {
                 // TODO
             });
+        });
+    });
+    describe('blacklist handling', () => {
+        it('reject trying to remove non-blacklisted collection', async () => {
+            await expectToThrow(
+                soonmarket.actions.delblacklist([CYPHER_GANG]).send(),
+                eosio_assert(ERROR_COLLECTION_NOT_BLACKLISTED),
+            );
+        });
+        it('reject if collection already blacklisted', async () => {
+            await expectToThrow(
+                soonmarket.actions.addblacklist([PIXELHEROES, 'reverts anyway, already blacklisted ...', []]).send(),
+                eosio_assert(ERROR_COLLECTION_ALREADY_BLACKLISTED),
+            );
+        });
+    });
+    describe('verified handling', () => {
+        it('reject trying to remove verified collection', async () => {
+            await expectToThrow(
+                soonmarket.actions.delverified([PIXELHEROES]).send(),
+                eosio_assert(ERROR_COLLECTION_NOT_VERIFIED),
+            );
+        });
+        it('reject if collection already verified', async () => {
+            await expectToThrow(
+                soonmarket.actions.addverified([CYPHER_GANG, 'reverts anyway, already verified ...', []]).send(),
+                eosio_assert(ERROR_COLLECTION_ALREADY_VERIFIED),
+            );
         });
     });
 });

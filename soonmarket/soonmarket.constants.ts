@@ -27,3 +27,6 @@ export const ONE_HOUR = 3_600;
 export const ONE_DAY = 86_400;
 export const ONE_WEEK = 604_800;
 export const TWO_WEEKS = 1_209_600;
+
+export const CYPHER_GANG = 'zvapir55jvu4';
+export const PIXELHEROES = '322142131552';
