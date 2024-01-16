@@ -1,5 +1,5 @@
 import { Table, Name } from 'proton-tsc';
-import { ONE_WEEK, TWO_WEEKS } from './soonmarket.constants';
+import { GOLD_SPOT_ID_MAINNET, ONE_WEEK, SILVER_SPOT_TEMPLATE_ID_MAINNET, TWO_WEEKS } from './soonmarket.constants';
 
 @table('globals', singleton)
 export class Globals extends Table {
@@ -10,8 +10,8 @@ export class Globals extends Table {
         public goldPromoCount: u64 = 0,
         public silverPromoDuration: u32 = ONE_WEEK,
         public goldPromoDuration: u32 = TWO_WEEKS,
-        public goldSpotId: u64 = 4398046764318, // mainnet value
-        public silverSpotTemplateId: u32 = 51066, // mainnet value
+        public goldSpotId: u64 = GOLD_SPOT_ID_MAINNET,
+        public silverSpotTemplateId: u32 = SILVER_SPOT_TEMPLATE_ID_MAINNET,
     ) {
         super();
     }

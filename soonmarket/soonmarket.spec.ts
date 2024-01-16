@@ -35,7 +35,10 @@ import {
     ERROR_COLLECTION_ALREADY_BLACKLISTED,
     ERROR_COLLECTION_NOT_VERIFIED,
     ERROR_COLLECTION_ALREADY_VERIFIED,
+    GOLD_SPOT_ID_MAINNET,
+    SILVER_SPOT_TEMPLATE_ID_MAINNET,
 } from './soonmarket.constants.ts';
+import { Globals } from './soonmarket.tables.ts';
 
 const blockchain = new Blockchain();
 
@@ -60,13 +63,17 @@ const [powerofsoon, protonpunk, pixelheroes, marco, mitch] = blockchain.createAc
     'mitch',
 );
 
+// helpers
+const getGlobals = (): Globals => soonmarket.tables.globals().getTableRows()[0];
+
 let silverSpots: Array<NFT> = [];
 let goldSpot: NFT;
 let cypherToAuction: NFT;
 
-beforeEach(async () => {
+let initSnapshot: number;
+
+before(async () => {
     blockchain.resetTables();
-    blockchain.enableStorageDeltas();
     await initContracts(atomicassets, atomicmarket);
     await initialAdminColEdit(atomicassets);
     // atomicassets
@@ -107,7 +114,17 @@ beforeEach(async () => {
         .send();
     // add blacklisted collection
     await soonmarket.actions.addblacklist([PIXELHEROES, 'testing cool shit here :-)', []]).send();
-    blockchain.disableStorageDeltas();
+    const globals = getGlobals();
+    console.log(JSON.stringify(globals));
+    expect(globals.goldSpotId).equal(goldSpot.asset_id);
+    expect(globals.silverSpotTemplateId).equal(silverSpots[0].template_id);
+    expect(globals.verifiedCount).equal(1);
+    expect(globals.blacklistCount).equal(1);
+    initSnapshot = blockchain.store.snapshot();
+});
+
+beforeEach(async () => {
+    blockchain.store.revertTo(initSnapshot);
 });
 
 describe('SoonMarket', () => {
@@ -242,27 +259,28 @@ describe('SoonMarket', () => {
             it('promotion of collection via silver spot', async () => {
                 // marco is owner, powerofsoon not
                 let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[0].asset_id);
-                expect(spotNft).to.be.not.undefined;
+                expect(spotNft).not.undefined;
                 spotNft = atomicassets.tables
                     .assets(nameToBigInt(powerofsoon.name))
                     .getTableRow(silverSpots[0].asset_id);
-                expect(spotNft).to.be.undefined;
-                // promote by transfering Spot NFT with valid memo to soonmarket
-                await transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], 'collection zvapir55jvu4');
+                expect(spotNft).undefined;
+                // promote by transferring Spot NFT with valid memo to soonmarket
+                await transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], `collection ${CYPHER_GANG}`);
                 // powerofsoon is new owner
                 spotNft = atomicassets.tables
                     .assets(nameToBigInt(powerofsoon.name))
                     .getTableRow(silverSpots[0].asset_id);
-                expect(spotNft).to.be.not.undefined;
+                expect(spotNft).not.undefined;
+                expect(getGlobals().silverPromoCount).equal(1);
             });
             it('promotion of NFT auction via silver spot (TODO: remove once we upgrade the code and disallow this)', async () => {
                 // marco is owner, powerofsoon not
                 let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[0].asset_id);
-                expect(spotNft).to.be.not.undefined;
+                expect(spotNft).not.undefined;
                 spotNft = atomicassets.tables
                     .assets(nameToBigInt(powerofsoon.name))
                     .getTableRow(silverSpots[0].asset_id);
-                expect(spotNft).to.be.undefined;
+                expect(spotNft).undefined;
                 // announce & start auction
                 await announceAuction(
                     atomicmarket,
@@ -283,14 +301,15 @@ describe('SoonMarket', () => {
                     (spotNft = atomicassets.tables
                         .assets(nameToBigInt(powerofsoon.name))
                         .getTableRow(silverSpots[0].asset_id));
-                expect(spotNft).to.be.not.undefined;
+                expect(spotNft).not.undefined;
+                expect(getGlobals().silverPromoCount).equal(1);
             });
             it('promotion of NFT auction via gold spot', async () => {
                 // marco is owner, powerofsoon not
                 let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(goldSpot.asset_id);
-                expect(spotNft).to.be.not.undefined;
+                expect(spotNft).not.undefined;
                 spotNft = atomicassets.tables.assets(nameToBigInt(powerofsoon.name)).getTableRow(goldSpot.asset_id);
-                expect(spotNft).to.be.undefined;
+                expect(spotNft).undefined;
                 // announce & start auction
                 await announceAuction(
                     atomicmarket,
@@ -311,10 +330,21 @@ describe('SoonMarket', () => {
                     (spotNft = atomicassets.tables
                         .assets(nameToBigInt(powerofsoon.name))
                         .getTableRow(goldSpot.asset_id));
-                expect(spotNft).to.be.not.undefined;
+                expect(spotNft).not.undefined;
+                expect(getGlobals().goldPromoCount).equal(1);
             });
-            xit('promotion of NFT collection via gold spot', async () => {
-                // TODO
+            it('promotion of NFT collection via gold spot', async () => {
+                // marco is owner, powerofsoon not
+                let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(goldSpot.asset_id);
+                expect(spotNft).not.undefined;
+                spotNft = atomicassets.tables.assets(nameToBigInt(powerofsoon.name)).getTableRow(goldSpot.asset_id);
+                expect(spotNft).undefined;
+                // promote by transferring Spot NFT with valid memo to soonmarket
+                await transferNfts(atomicassets, marco, soonmarket, [goldSpot], `collection ${CYPHER_GANG}`);
+                // powerofsoon is new owner
+                spotNft = atomicassets.tables.assets(nameToBigInt(powerofsoon.name)).getTableRow(goldSpot.asset_id);
+                expect(spotNft).not.undefined;
+                expect(getGlobals().goldPromoCount).equal(1);
             });
         });
     });
