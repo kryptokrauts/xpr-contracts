@@ -147,6 +147,8 @@ class SoonMarket extends Contract {
         }
     }
 
+    // TODO automated balance forwarding to soonfinance (via notify?)
+
     @action('logcolpromo')
     logCollectionPromotion(collection: Name, promotedBy: Name, spotType: string, promotionEnd: u32): void {
         requireAuth(currentReceiver());
