@@ -19,9 +19,15 @@ import {
     ERROR_COLLECTION_ALREADY_VERIFIED,
     ERROR_COLLECTION_NOT_BLACKLISTED,
     ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED,
-    SILVER_SPOT_AUCTIONS_ENABLED,
-    ONE_DAY,
     ONE_HOUR,
+    ONE_DAY,
+    SILVER_SPOT_AUCTIONS_ENABLED,
+    SPOT_TYPE_GOLD,
+    SPOT_TYPE_SILVER,
+    PROMO_TYPE_AUCTION,
+    PROMO_TYPE_COLLECTION,
+    ACTION_AUCTION,
+    ACTION_BURN_MINT_AUCTION,
 } from './soonmarket.constants';
 import { requireAuth } from 'as-chain';
 import { sendLogAuctPromo, sendLogColPromo } from './soonmarket.inline';
@@ -151,8 +157,19 @@ class SoonMarket extends Contract {
         requireAuth(currentReceiver());
     }
 
+    checkValidSilverSpot(spotNftId: u64): void {
+        const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, currentReceiver()).requireGet(
+            spotNftId,
+            'fatal error - should never happen',
+        );
+        check(
+            this.globalsSingleton.get().silverSpotTemplateId == asset.template_id,
+            ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED,
+        );
+    }
+
     isValidPromotionType(value: string): boolean {
-        const validPromotionTypes = ['auction', 'collection'];
+        const validPromotionTypes = [PROMO_TYPE_AUCTION, PROMO_TYPE_COLLECTION];
         return validPromotionTypes.includes(value);
     }
 
@@ -196,8 +213,8 @@ class SoonMarket extends Contract {
 
     validateAndHandleSpot(spotNftId: u64, promoType: string, promoTargetId: string, promotedBy: Name): void {
         const globals = this.globalsSingleton.get();
-        let spotType: string = globals.goldSpotId == spotNftId ? 'gold' : 'silver';
-        if ('auction' == promoType) {
+        let spotType: string = globals.goldSpotId == spotNftId ? SPOT_TYPE_GOLD : SPOT_TYPE_SILVER;
+        if (PROMO_TYPE_AUCTION == promoType) {
             // TODO remove silver spot check in new market
             check(
                 globals.goldSpotId == spotNftId || SILVER_SPOT_AUCTIONS_ENABLED,
@@ -205,38 +222,30 @@ class SoonMarket extends Contract {
             );
             const goldSpotAuctionDuration = this.validateAuction(promoTargetId);
             if (globals.goldSpotId != spotNftId) {
-                const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, currentReceiver()).requireGet(
-                    spotNftId,
-                    'fatal error - should never happen',
-                );
-                check(globals.silverSpotTemplateId == asset.template_id, ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED);
+                this.checkValidSilverSpot(spotNftId);
             }
             sendLogAuctPromo(this.contract, promoTargetId, promotedBy, spotType);
-            const memoAction = spotType == 'gold' ? `auction ${goldSpotAuctionDuration}` : 'burn';
+            const memoAction =
+                spotType == SPOT_TYPE_GOLD ? `${ACTION_AUCTION} ${goldSpotAuctionDuration}` : ACTION_BURN_MINT_AUCTION;
             sendTransferNfts(currentReceiver(), POWEROFSOON, [spotNftId], memoAction);
-        } else if ('collection' == promoType) {
+        } else if (PROMO_TYPE_COLLECTION == promoType) {
             const collection = Name.fromString(promoTargetId);
             this.validateCollection(collection);
-            if (globals.goldSpotId != spotNftId) {
-                const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, currentReceiver()).requireGet(
-                    spotNftId,
-                    'fatal error - should never happen',
-                );
-                check(globals.silverSpotTemplateId == asset.template_id, ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED);
-                spotType = 'silver';
+            let promoDuration = SPOT_TYPE_GOLD ? globals.goldPromoDuration : globals.silverPromoDuration;
+            if (SPOT_TYPE_GOLD != spotType) {
+                this.checkValidSilverSpot(spotNftId);
             }
-            const promotionEnd = <u32>(
-                SafeMath.add(
-                    currentTimePoint().secSinceEpoch(),
-                    spotType == 'gold' ? globals.goldPromoDuration : globals.silverPromoDuration,
-                )
-            );
+            const promotionEnd = <u32>SafeMath.add(currentTimePoint().secSinceEpoch(), promoDuration);
             sendLogColPromo(this.contract, collection, promotedBy, spotType, promotionEnd);
-            const goldSpotAuctionDuration = SafeMath.add(promotionEnd, ONE_DAY);
-            const memoAction = spotType == 'gold' ? `auction ${goldSpotAuctionDuration}` : 'burn';
+            // determine required auction duration for gold spot
+            const goldSpotAuctionDuration = <u32>(
+                SafeMath.add(SafeMath.sub(promotionEnd, currentTimePoint().secSinceEpoch()), ONE_DAY)
+            );
+            const memoAction =
+                spotType == SPOT_TYPE_GOLD ? `${ACTION_AUCTION} ${goldSpotAuctionDuration}` : ACTION_BURN_MINT_AUCTION;
             sendTransferNfts(currentReceiver(), POWEROFSOON, [spotNftId], memoAction);
         }
-        if (spotType == 'gold') {
+        if (spotType == SPOT_TYPE_GOLD) {
             globals.goldPromoCount++;
         } else {
             globals.silverPromoCount++;

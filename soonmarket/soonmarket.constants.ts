@@ -24,12 +24,24 @@ export const GOLD_SPOT_ID_MAINNET = 4398046764318;
 export const SILVER_SPOT_TEMPLATE_ID_MAINNET = 51066;
 export const SILVER_SPOT_AUCTIONS_ENABLED = true; // TODO remove once we update code for new market
 
+// promo types
+export const PROMO_TYPE_AUCTION = 'auction';
+export const PROMO_TYPE_COLLECTION = 'collection';
+
+// spot types
+export const SPOT_TYPE_GOLD = 'gold';
+export const SPOT_TYPE_SILVER = 'silver';
+
+// actions
+export const ACTION_AUCTION = 'auction';
+export const ACTION_BURN_MINT_AUCTION = 'burn_mint_auction';
+
 // durations in seconds
 export const ONE_HOUR = 3_600;
 export const ONE_DAY = 86_400;
 export const ONE_WEEK = 604_800;
 export const TWO_WEEKS = 1_209_600;
 
-// test collections
-export const CYPHER_GANG = 'zvapir55jvu4';
-export const PIXELHEROES = '322142131552';
+// // test collections
+// export const CYPHER_GANG = 'zvapir55jvu4';
+// export const PIXELHEROES = '322142131552';

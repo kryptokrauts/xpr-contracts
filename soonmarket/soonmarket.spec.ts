@@ -1,20 +1,21 @@
 import { expect } from 'chai';
-import { Blockchain, expectToThrow, mintTokens, nameToBigInt } from '@proton/vert';
-import {
-    LOAN,
-    METAL,
-    XBTC,
-    XDOGE,
-    XETH,
-    XMD,
-    XMT,
-    XPR,
-    XUSDC,
-    eosio_assert,
-    initContracts,
-} from '../helpers/common.ts';
+import { Account, Blockchain, expectToThrow, mintTokens, nameToBigInt } from '@proton/vert';
 import { NFT, createTestCollection, initialAdminColEdit, transferNfts } from '../helpers/atomicassets.helper.ts';
 import { Auction, addTokens, announceAuction, regMarket } from '../helpers/atomicmarket.helper.ts';
+import {
+    COLLECTION_CYPHER_GANG,
+    COLLECTION_PIXELHEROES,
+    TOKEN_LOAN,
+    TOKEN_METAL,
+    TOKEN_XBTC,
+    TOKEN_XDOGE,
+    TOKEN_XETH,
+    TOKEN_XMD,
+    TOKEN_XMT,
+    TOKEN_XPR,
+    TOKEN_XUSDC,
+    eosio_assert,
+} from '../helpers/common.ts';
 import {
     ERROR_AUCTION_NOT_EXISTS,
     ERROR_COLLECTION_NOT_EXISTS,
@@ -24,19 +25,15 @@ import {
     ERROR_INVALID_WORD_COUNT,
     ERROR_AUCTION_NOT_STARTED,
     ERROR_ONLY_ONE_SPOT_NFT_ALLOWED,
-    ONE_HOUR,
     ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION,
     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
     ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED,
     ERROR_COLLECTION_NOT_BLACKLISTED,
-    CYPHER_GANG,
-    PIXELHEROES,
     ERROR_COLLECTION_BLACKLISTED,
     ERROR_COLLECTION_ALREADY_BLACKLISTED,
     ERROR_COLLECTION_NOT_VERIFIED,
     ERROR_COLLECTION_ALREADY_VERIFIED,
-    GOLD_SPOT_ID_MAINNET,
-    SILVER_SPOT_TEMPLATE_ID_MAINNET,
+    ONE_HOUR,
 } from './soonmarket.constants.ts';
 import { Globals } from './soonmarket.tables.ts';
 
@@ -64,6 +61,11 @@ const [powerofsoon, protonpunk, pixelheroes, marco, mitch] = blockchain.createAc
 );
 
 // helpers
+export const initContracts = async (...contracts: Array<Account>): Promise<void> => {
+    for (const contract of contracts) {
+        await contract.actions.init().send();
+    }
+};
 const getGlobals = (): Globals => soonmarket.tables.globals().getTableRows()[0];
 
 let silverSpots: Array<NFT> = [];
@@ -81,21 +83,21 @@ before(async () => {
     await createTestCollection(atomicassets, protonpunk);
     await createTestCollection(atomicassets, pixelheroes);
     // tokens
-    await mintTokens(eosioToken, XPR.name, XPR.precision, 10000000.0, 4, [marco, mitch]);
-    await mintTokens(xtokens, XBTC.name, XBTC.precision, 21000000.0, 5, [marco, mitch]);
-    await mintTokens(xtokens, XETH.name, XETH.precision, 100000000.0, 20, [marco, mitch]);
-    await mintTokens(xtokens, XDOGE.name, XDOGE.precision, 128303944202.0, 100000, [marco, mitch]);
-    await mintTokens(xtokens, XUSDC.name, XUSDC.precision, 2588268654.84833, 20000, [marco, mitch]);
-    await mintTokens(xtokens, XMT.name, XMT.precision, 66588888.0, 5000, [marco, mitch]);
-    await mintTokens(xtokens, METAL.name, METAL.precision, 666666666.0, 20000, [marco, mitch]);
-    await mintTokens(loanToken, LOAN.name, LOAN.precision, 100000000.0, 20000, [marco, mitch]); // how to define unlimited?
-    await mintTokens(xmdToken, XMD.name, XMD.precision, 100000000.0, 20000, [marco, mitch]); // how to define unlimited?
+    await mintTokens(eosioToken, TOKEN_XPR.name, TOKEN_XPR.precision, 10000000.0, 4, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XBTC.name, TOKEN_XBTC.precision, 21000000.0, 5, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XETH.name, TOKEN_XETH.precision, 100000000.0, 20, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XDOGE.name, TOKEN_XDOGE.precision, 128303944202.0, 100000, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XUSDC.name, TOKEN_XUSDC.precision, 2588268654.84833, 20000, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XMT.name, TOKEN_XMT.precision, 66588888.0, 5000, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_METAL.name, TOKEN_METAL.precision, 666666666.0, 20000, [marco, mitch]);
+    await mintTokens(loanToken, TOKEN_LOAN.name, TOKEN_LOAN.precision, 100000000.0, 20000, [marco, mitch]); // how to define unlimited?
+    await mintTokens(xmdToken, TOKEN_XMD.name, TOKEN_XMD.precision, 100000000.0, 20000, [marco, mitch]); // how to define unlimited?
     // atomicmarket
     await regMarket(atomicmarket, soonmarket);
-    await addTokens(atomicmarket, eosioToken, [XPR]);
-    await addTokens(atomicmarket, xtokens, [XBTC, XETH, XDOGE, XUSDC, XMT, METAL]);
-    await addTokens(atomicmarket, loanToken, [LOAN]);
-    await addTokens(atomicmarket, xmdToken, [XMD]);
+    await addTokens(atomicmarket, eosioToken, [TOKEN_XPR]);
+    await addTokens(atomicmarket, xtokens, [TOKEN_XBTC, TOKEN_XETH, TOKEN_XDOGE, TOKEN_XUSDC, TOKEN_XMT, TOKEN_METAL]);
+    await addTokens(atomicmarket, loanToken, [TOKEN_LOAN]);
+    await addTokens(atomicmarket, xmdToken, [TOKEN_XMD]);
     // get spot nft id (no need to check collection because marco owns only spot nfts)
     const spotNfts: Array<NFT> = atomicassets.tables
         .assets(nameToBigInt(marco.name))
@@ -110,10 +112,10 @@ before(async () => {
     await soonmarket.actions.setspots([Number.parseInt(goldSpot.asset_id), silverSpots[0].template_id]).send();
     // add verified collection
     await soonmarket.actions
-        .addverified([CYPHER_GANG, 'testing cool shit here :-)', ['https://cyphergang.com']])
+        .addverified([COLLECTION_CYPHER_GANG, 'testing cool shit here :-)', ['https://cyphergang.com']])
         .send();
     // add blacklisted collection
-    await soonmarket.actions.addblacklist([PIXELHEROES, 'testing cool shit here :-)', []]).send();
+    await soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'testing cool shit here :-)', []]).send();
     const globals = getGlobals();
     console.log(JSON.stringify(globals));
     expect(globals.goldSpotId).equal(goldSpot.asset_id);
@@ -132,7 +134,7 @@ describe('SoonMarket', () => {
         describe('revert paths', () => {
             it('reject with transfer of more than 1 spot nft', async () => {
                 await expectToThrow(
-                    transferNfts(atomicassets, marco, soonmarket, silverSpots, `collection ${CYPHER_GANG}`),
+                    transferNfts(atomicassets, marco, soonmarket, silverSpots, `collection ${COLLECTION_CYPHER_GANG}`),
                     eosio_assert(ERROR_ONLY_ONE_SPOT_NFT_ALLOWED),
                 );
             });
@@ -151,7 +153,13 @@ describe('SoonMarket', () => {
                 });
                 it('invalid promotion type', async () => {
                     await expectToThrow(
-                        transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], `offer ${CYPHER_GANG}`),
+                        transferNfts(
+                            atomicassets,
+                            marco,
+                            soonmarket,
+                            [silverSpots[0]],
+                            `offer ${COLLECTION_CYPHER_GANG}`,
+                        ),
                         eosio_assert(ERROR_INVALID_PROMOTION_TYPE),
                     );
                 });
@@ -177,22 +185,28 @@ describe('SoonMarket', () => {
                     'wrong template id for the test, needs to be the same as silver spot',
                 );
                 await expectToThrow(
-                    transferNfts(atomicassets, pixelheroes, soonmarket, [pixelheroNft], `collection ${CYPHER_GANG}`),
+                    transferNfts(
+                        atomicassets,
+                        pixelheroes,
+                        soonmarket,
+                        [pixelheroNft],
+                        `collection ${COLLECTION_CYPHER_GANG}`,
+                    ),
                     eosio_assert(ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED),
                 );
             });
             it('reject if collection is blacklisted', async () => {
                 let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[0].asset_id);
                 await expectToThrow(
-                    transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${PIXELHEROES}`),
+                    transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${COLLECTION_PIXELHEROES}`),
                     eosio_assert(ERROR_COLLECTION_BLACKLISTED),
                 );
             });
             it('reject if collection is neither verified nor shielded', async () => {
-                await soonmarket.actions.delblacklist([PIXELHEROES]).send();
+                await soonmarket.actions.delblacklist([COLLECTION_PIXELHEROES]).send();
                 let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[0].asset_id);
                 await expectToThrow(
-                    transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${PIXELHEROES}`),
+                    transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${COLLECTION_PIXELHEROES}`),
                     eosio_assert(ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED),
                 );
             });
@@ -209,7 +223,7 @@ describe('SoonMarket', () => {
                     protonpunk,
                     [cypherToAuction],
                     1337,
-                    XPR,
+                    TOKEN_XPR,
                     86400,
                     soonmarket,
                     atomicassets,
@@ -228,7 +242,7 @@ describe('SoonMarket', () => {
                     protonpunk,
                     [cypherToAuction],
                     1337,
-                    XPR,
+                    TOKEN_XPR,
                     invalidRemainingTime,
                     soonmarket,
                     atomicassets,
@@ -265,7 +279,13 @@ describe('SoonMarket', () => {
                     .getTableRow(silverSpots[0].asset_id);
                 expect(spotNft).undefined;
                 // promote by transferring Spot NFT with valid memo to soonmarket
-                await transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], `collection ${CYPHER_GANG}`);
+                await transferNfts(
+                    atomicassets,
+                    marco,
+                    soonmarket,
+                    [silverSpots[0]],
+                    `collection ${COLLECTION_CYPHER_GANG}`,
+                );
                 // powerofsoon is new owner
                 spotNft = atomicassets.tables
                     .assets(nameToBigInt(powerofsoon.name))
@@ -287,7 +307,7 @@ describe('SoonMarket', () => {
                     protonpunk,
                     [cypherToAuction],
                     1337,
-                    XPR,
+                    TOKEN_XPR,
                     86400,
                     soonmarket,
                     atomicassets,
@@ -316,7 +336,7 @@ describe('SoonMarket', () => {
                     protonpunk,
                     [cypherToAuction],
                     1337,
-                    XPR,
+                    TOKEN_XPR,
                     86400,
                     soonmarket,
                     atomicassets,
@@ -340,7 +360,7 @@ describe('SoonMarket', () => {
                 spotNft = atomicassets.tables.assets(nameToBigInt(powerofsoon.name)).getTableRow(goldSpot.asset_id);
                 expect(spotNft).undefined;
                 // promote by transferring Spot NFT with valid memo to soonmarket
-                await transferNfts(atomicassets, marco, soonmarket, [goldSpot], `collection ${CYPHER_GANG}`);
+                await transferNfts(atomicassets, marco, soonmarket, [goldSpot], `collection ${COLLECTION_CYPHER_GANG}`);
                 // powerofsoon is new owner
                 spotNft = atomicassets.tables.assets(nameToBigInt(powerofsoon.name)).getTableRow(goldSpot.asset_id);
                 expect(spotNft).not.undefined;
@@ -351,13 +371,15 @@ describe('SoonMarket', () => {
     describe('blacklist handling', () => {
         it('reject trying to remove non-blacklisted collection', async () => {
             await expectToThrow(
-                soonmarket.actions.delblacklist([CYPHER_GANG]).send(),
+                soonmarket.actions.delblacklist([COLLECTION_CYPHER_GANG]).send(),
                 eosio_assert(ERROR_COLLECTION_NOT_BLACKLISTED),
             );
         });
         it('reject if collection already blacklisted', async () => {
             await expectToThrow(
-                soonmarket.actions.addblacklist([PIXELHEROES, 'reverts anyway, already blacklisted ...', []]).send(),
+                soonmarket.actions
+                    .addblacklist([COLLECTION_PIXELHEROES, 'reverts anyway, already blacklisted ...', []])
+                    .send(),
                 eosio_assert(ERROR_COLLECTION_ALREADY_BLACKLISTED),
             );
         });
@@ -365,13 +387,15 @@ describe('SoonMarket', () => {
     describe('verified handling', () => {
         it('reject trying to remove verified collection', async () => {
             await expectToThrow(
-                soonmarket.actions.delverified([PIXELHEROES]).send(),
+                soonmarket.actions.delverified([COLLECTION_PIXELHEROES]).send(),
                 eosio_assert(ERROR_COLLECTION_NOT_VERIFIED),
             );
         });
         it('reject if collection already verified', async () => {
             await expectToThrow(
-                soonmarket.actions.addverified([CYPHER_GANG, 'reverts anyway, already verified ...', []]).send(),
+                soonmarket.actions
+                    .addverified([COLLECTION_CYPHER_GANG, 'reverts anyway, already verified ...', []])
+                    .send(),
                 eosio_assert(ERROR_COLLECTION_ALREADY_VERIFIED),
             );
         });
