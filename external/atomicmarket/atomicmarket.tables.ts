@@ -1,6 +1,6 @@
 import { Asset, EMPTY_NAME, Name, Table } from 'proton-tsc';
 
-// Scope: N/A
+// no scope
 @table('auctions', noabigen)
 export class Auctions extends Table {
     constructor(
@@ -24,5 +24,20 @@ export class Auctions extends Table {
     @primary
     get primary(): u64 {
         return this.auction_id;
+    }
+}
+
+@table('balances', noabigen)
+export class Balances extends Table {
+    constructor(
+        public owner: Name = EMPTY_NAME,
+        public quantities: Array<Asset> = [],
+    ) {
+        super();
+    }
+
+    @primary
+    get primary(): u64 {
+        return this.owner.N;
     }
 }
