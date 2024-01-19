@@ -2,7 +2,8 @@ import { Name, Contract, TableStore, check, SafeMath, currentTimePoint, Singleto
 import { ATOMICASSETS_CONTRACT, Assets, Collections, sendTransferNfts } from 'proton-tsc/atomicassets';
 
 import { ATOMICMARKET_CONTRACT } from '../external/atomicmarket/atomicmarket.constants';
-import { Auctions } from '../external/atomicmarket/atomicmarket.tables';
+import { Auctions, Balances } from '../external/atomicmarket/atomicmarket.tables';
+import { sendWithdraw } from '../external/atomicmarket/atomicmarket.inline';
 import {
     ERROR_AUCTION_NOT_EXISTS,
     ERROR_COLLECTION_NOT_EXISTS,
@@ -28,6 +29,7 @@ import {
     PROMO_TYPE_COLLECTION,
     ACTION_AUCTION,
     ACTION_BURN_MINT_AUCTION,
+    ERROR_MARKET_BALANCE_NOT_FOUND,
 } from './soonmarket.constants';
 import { requireAuth } from 'as-chain';
 import { sendLogAuctPromo, sendLogColPromo } from './soonmarket.inline';
@@ -52,6 +54,16 @@ class SoonMarket extends Contract {
 
     // atomicmarket tables
     amAuctions: TableStore<Auctions> = new TableStore<Auctions>(ATOMICMARKET_CONTRACT);
+    amBalances: TableStore<Balances> = new TableStore<Balances>(ATOMICMARKET_CONTRACT);
+
+    @action('clmktbalance') // can be called by anybody
+    claimMarketBalance(): void {
+        const balancesRow = this.amBalances.requireGet(this.contract.N, ERROR_MARKET_BALANCE_NOT_FOUND);
+        for (let i = 0; i < balancesRow.quantities.length; i++) {
+            // incoming token transfer will trigger payment forward to soonfinance
+            sendWithdraw(this.contract, this.contract, balancesRow.quantities[i]);
+        }
+    }
 
     @action('setspots')
     setSpots(goldSpotId: u64, silverSpotTemplateId: u32): void {

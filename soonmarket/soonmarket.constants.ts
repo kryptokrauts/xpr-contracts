@@ -1,4 +1,5 @@
 // error messages
+export const ERROR_MARKET_BALANCE_NOT_FOUND: string = 'market balance not found';
 export const ERROR_ONLY_ONE_SPOT_NFT_ALLOWED: string = 'only one spot can nft be redeemed for promotion';
 export const ERROR_COLLECTION_NOT_EXISTS: string = 'collection not exists';
 export const ERROR_COLLECTION_BLACKLISTED: string = 'collection blacklisted';
@@ -20,6 +21,7 @@ export const ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION: string = 'auction exp
 export const ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET: string = 'missing required authority soonmarket';
 
 // soon spots
+export const SPOT_COLLECTION_NAME = '323154322551';
 export const GOLD_SPOT_ID_MAINNET = 4398046764318;
 export const SILVER_SPOT_TEMPLATE_ID_MAINNET = 51066;
 export const SILVER_SPOT_AUCTIONS_ENABLED = true; // TODO remove once we update code for new market

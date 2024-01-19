@@ -8,6 +8,7 @@ export const ERROR_XPRUSD_FEED_NOT_FOUND: string = 'XPR/USD feed not found';
 export const ERROR_XPRUSD_WRONG_FEED_NAME: string = 'wrong feed name - expected XPR/USD';
 export const ERROR_FEED_DATA_NOT_FOUND: string = 'feed data not found';
 export const ERROR_AGGREGATED_PRICE_MUST_BE_POSITIVE: string = 'aggregated price must be greater than 0';
+export const ERROR_SILVER_SPOT_EXPECTED: string = 'action only allowed for silver spot nft';
 
 // actions
 export const ACTION_AUCTION = 'auction';

@@ -1,4 +1,5 @@
 import { ActionData, Asset, InlineAction, Name, PermissionLevel } from 'proton-tsc';
+import { ATOMICMARKET_CONTRACT } from './atomicmarket.constants';
 
 @packer
 export class Withdraw extends ActionData {
@@ -23,15 +24,21 @@ export class AnnounceAuction extends ActionData {
     }
 }
 
-export function sendWithdraw(contract: Name, owner: Name, token: Asset): void {
+@packer
+class AuctionId extends ActionData {
+    constructor(public auction_id: u64 = 0) {
+        super();
+    }
+}
+
+export function sendWithdraw(actor: Name, owner: Name, token: Asset): void {
     const WITHDRAW = new InlineAction<Withdraw>('withdraw');
-    const action = WITHDRAW.act(contract, new PermissionLevel(contract));
+    const action = WITHDRAW.act(ATOMICMARKET_CONTRACT, new PermissionLevel(actor));
     const actionParams = new Withdraw(owner, token);
     action.send(actionParams);
 }
 
 export function sendAnnounceAuction(
-    contract: Name,
     seller: Name,
     asset_ids: Array<u64>,
     starting_bid: Asset,
@@ -39,7 +46,21 @@ export function sendAnnounceAuction(
     maker_marketplace: Name,
 ): void {
     const ANNOUNCE_AUCTION = new InlineAction<AnnounceAuction>('announceauct');
-    const action = ANNOUNCE_AUCTION.act(contract, new PermissionLevel(contract));
+    const action = ANNOUNCE_AUCTION.act(ATOMICMARKET_CONTRACT, new PermissionLevel(seller));
     const actionParams = new AnnounceAuction(seller, asset_ids, starting_bid, duration, maker_marketplace);
+    action.send(actionParams);
+}
+
+export function sendAuctionClaimSeller(actor: Name, auctionId: u64): void {
+    const AUCTION_CLAIM_SELLER = new InlineAction<AuctionId>('auctclaimsel');
+    const action = AUCTION_CLAIM_SELLER.act(ATOMICMARKET_CONTRACT, new PermissionLevel(actor));
+    const actionParams = new AuctionId(auctionId);
+    action.send(actionParams);
+}
+
+export function sendCancelAuction(actor: Name, auctionId: u64): void {
+    const CANCEL_AUCTION = new InlineAction<AuctionId>('cancelauct');
+    const action = CANCEL_AUCTION.act(ATOMICMARKET_CONTRACT, new PermissionLevel(actor));
+    const actionParams = new AuctionId(auctionId);
     action.send(actionParams);
 }
