@@ -1,7 +1,14 @@
-import { Asset, Contract, Name, Singleton, TableStore, check, requireAuth } from 'proton-tsc';
+import { Asset, Contract, Name, Singleton, TableStore, check, requireAuth, unpackActionData } from 'proton-tsc';
 import { XPR_SYMBOL } from 'proton-tsc/system';
 import { Data, Feed, ORACLES_CONTRACT } from 'proton-tsc/oracles';
-import { ATOMICASSETS_CONTRACT, Assets, sendBurnAsset, sendMintAsset, sendTransferNfts } from 'proton-tsc/atomicassets';
+import {
+    ATOMICASSETS_CONTRACT,
+    Assets,
+    TransferNfts,
+    sendBurnAsset,
+    sendMintAsset,
+    sendTransferNfts,
+} from 'proton-tsc/atomicassets';
 import {
     ACTION_AUCTION,
     ACTION_BURN_MINT_AUCTION,
@@ -29,6 +36,7 @@ import {
 import { Globals } from './powerofsoon.tables';
 import { Globals as SoonMarketGlobals } from '../soonmarket/soonmarket.tables';
 import { sendAuctionLatestSilverSpot } from './powerofsoon.inline';
+import { Transfer, sendTransferToken } from 'proton-tsc/token';
 
 const SOONMARKET = Name.fromString('soonmarket');
 
@@ -132,31 +140,56 @@ class PowerOfSoon extends Contract {
         this.startAuction(latestAsset!.asset_id, startingPrice, duration);
     }
 
+    // handle transfer notification
     @action('transfer', notify)
-    onReceive(from: Name, to: Name, asset_ids: u64[], memo: string): void {
-        // skip outgoing NFT transfers
-        if (from == this.contract) {
-            return;
-        }
-        // only handle incoming transfer from soonmarket
-        if (to == this.contract && from == SOONMARKET) {
-            check(asset_ids.length == 1, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED);
-            check(ACTION_BURN_MINT_AUCTION == memo || memo.startsWith(ACTION_AUCTION), ERROR_INVALID_ACTION);
-            const globals = this.globalsSingleton.get();
-            const xprUsdFeed = this.oraclesFeedTable.requireGet(
-                globals.oraclesFeedIndexXprUsd,
-                ERROR_XPRUSD_FEED_NOT_FOUND,
-            );
-            check(ORACLES_FEED_NAME_XPRUSD == xprUsdFeed.name, ERROR_XPRUSD_WRONG_FEED_NAME);
-            const xprUsdPrice = this.getAndCheckXprUsdPrice();
-            if (ACTION_BURN_MINT_AUCTION == memo) {
-                this.burnMintAuction(asset_ids[0], xprUsdPrice);
-            } else {
-                const memoSplit = memo.split(' ');
-                check(memoSplit.length == 2, ERROR_INVALID_MEMO);
-                const duration: u32 = <u32>Number.parseInt(memo[1]);
-                this.auctionGoldSpot(asset_ids[0], xprUsdPrice, duration);
+    onTransfer(): void {
+        // notification comes from atomicassets
+        if (ATOMICASSETS_CONTRACT == this.firstReceiver) {
+            // expecting an NFT transfer
+            const actionParams = unpackActionData<TransferNfts>();
+            // skip outgoing NFT transfers & all NFT transfers where soonmarket is not sender
+            if (actionParams.from == this.contract || actionParams.from != SOONMARKET) {
+                return;
             }
+            // only handle notifications from atomicassets contract where this contract is recipient & soonmarket is sender
+            if (actionParams.to == this.contract) {
+                check(actionParams.asset_ids.length == 1, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED);
+                check(
+                    ACTION_BURN_MINT_AUCTION == actionParams.memo || actionParams.memo.startsWith(ACTION_AUCTION),
+                    ERROR_INVALID_ACTION,
+                );
+                const globals = this.globalsSingleton.get();
+                const xprUsdFeed = this.oraclesFeedTable.requireGet(
+                    globals.oraclesFeedIndexXprUsd,
+                    ERROR_XPRUSD_FEED_NOT_FOUND,
+                );
+                check(ORACLES_FEED_NAME_XPRUSD == xprUsdFeed.name, ERROR_XPRUSD_WRONG_FEED_NAME);
+                const xprUsdPrice = this.getAndCheckXprUsdPrice();
+                if (ACTION_BURN_MINT_AUCTION == actionParams.memo) {
+                    this.burnMintAuction(actionParams.asset_ids[0], xprUsdPrice);
+                } else {
+                    const memoSplit = actionParams.memo.split(' ');
+                    check(memoSplit.length == 2, ERROR_INVALID_MEMO);
+                    const duration: u32 = <u32>Number.parseInt(actionParams.memo[1]);
+                    this.auctionGoldSpot(actionParams.asset_ids[0], xprUsdPrice, duration);
+                }
+            }
+        } else {
+            // otherwise we expect a regular token transfer
+            const actionParams = unpackActionData<Transfer>();
+            // skip outgoing transfers & transfers from other accounts than atomicmarket
+            if (actionParams.from == this.contract || ATOMICMARKET_CONTRACT != actionParams.from) {
+                return;
+            }
+            // forward tokens to soonfinance
+            // we do not check firstReceiver for now. at this point it is safe to assume that tokens supported by atomicmarket can be trusted
+            sendTransferToken(
+                this.firstReceiver,
+                this.contract,
+                Name.fromString('soonfinance'),
+                actionParams.quantity,
+                'nft sale proceeds & royalties',
+            );
         }
     }
 
@@ -208,6 +241,4 @@ class PowerOfSoon extends Contract {
         sendAnnounceAuction(this.contract, [nftId], startingPrice, duration, SOONMARKET);
         sendTransferNfts(this.contract, ATOMICMARKET_CONTRACT, [nftId], 'auction');
     }
-
-    // TODO automated balance forwarding to soonfinance (via notify?)
 }
