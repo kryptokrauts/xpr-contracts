@@ -1,5 +1,5 @@
-import { Name, Contract, TableStore, check, SafeMath, currentTimePoint, Singleton } from 'proton-tsc';
-import { ATOMICASSETS_CONTRACT, Assets, Collections, sendTransferNfts } from 'proton-tsc/atomicassets';
+import { Name, Contract, TableStore, check, SafeMath, currentTimePoint, Singleton, unpackActionData } from 'proton-tsc';
+import { ATOMICASSETS_CONTRACT, Assets, Collections, TransferNfts, sendTransferNfts } from 'proton-tsc/atomicassets';
 
 import { ATOMICMARKET_CONTRACT } from '../external/atomicmarket/atomicmarket.constants';
 import { Auctions, Balances } from '../external/atomicmarket/atomicmarket.tables';
@@ -20,6 +20,7 @@ import {
     ERROR_COLLECTION_ALREADY_VERIFIED,
     ERROR_COLLECTION_NOT_BLACKLISTED,
     ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED,
+    ERROR_MARKET_BALANCE_NOT_FOUND,
     ONE_HOUR,
     ONE_DAY,
     SILVER_SPOT_AUCTIONS_ENABLED,
@@ -29,11 +30,11 @@ import {
     PROMO_TYPE_COLLECTION,
     ACTION_AUCTION,
     ACTION_BURN_MINT_AUCTION,
-    ERROR_MARKET_BALANCE_NOT_FOUND,
 } from './soonmarket.constants';
 import { requireAuth } from 'as-chain';
 import { sendLogAuctPromo, sendLogColPromo } from './soonmarket.inline';
 import { CollectionsBlacklist, CollectionsVerified, Globals } from './soonmarket.tables';
+import { Transfer, sendTransferToken } from 'proton-tsc/token';
 
 const POWEROFSOON = Name.fromString('powerofsoon');
 
@@ -150,23 +151,38 @@ class SoonMarket extends Contract {
         this.collectionsVerified.remove(verifiedRow);
     }
 
+    // handle transfer notification
     @action('transfer', notify)
-    onReceive(from: Name, to: Name, asset_ids: u64[], memo: string): void {
-        // skip outgoing NFT transfers
-        if (from == this.contract) {
-            return;
-        }
-        // handling incoming NFT transfer
-        if (to == this.contract) {
-            check(asset_ids.length == 1, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED);
-            const memoWords = memo.split(' ');
+    onTransfer(): void {
+        // notification comes from atomicassets
+        if (ATOMICASSETS_CONTRACT == this.firstReceiver) {
+            // expecting an NFT transfer
+            const actionParams = unpackActionData<TransferNfts>();
+            // skip outgoing NFT transfers
+            if (actionParams.from == this.contract) {
+                return;
+            }
+            check(actionParams.asset_ids.length == 1, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED);
+            const memoWords = actionParams.memo.split(' ');
             check(memoWords.length == 2, ERROR_INVALID_WORD_COUNT);
             check(this.isValidPromotionType(memoWords[0]), ERROR_INVALID_PROMOTION_TYPE);
-            this.validateAndHandleSpot(asset_ids[0], memoWords[0], memoWords[1], from);
+            this.validateAndHandleSpot(actionParams.asset_ids[0], memoWords[0], memoWords[1], actionParams.from);
+        } else {
+            // otherwise we expect a regular token transfer
+            const actionParams = unpackActionData<Transfer>();
+            // skip outgoing transfers & transfers from other accounts than atomicmarket
+            if (actionParams.from == this.contract || ATOMICMARKET_CONTRACT != actionParams.from) {
+                return;
+            }
+            sendTransferToken(
+                this.firstReceiver,
+                this.contract,
+                Name.fromString('soonfinance'),
+                actionParams.quantity,
+                'marketplace revenue',
+            );
         }
     }
-
-    // TODO automated balance forwarding to soonfinance (via notify?)
 
     @action('logcolpromo')
     logCollectionPromotion(collection: Name, promotedBy: Name, spotType: string, promotionEnd: u32): void {

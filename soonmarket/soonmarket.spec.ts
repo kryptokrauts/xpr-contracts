@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { Account, Blockchain, expectToThrow, mintTokens, nameToBigInt } from '@proton/vert';
+import { Account, Blockchain, expectToThrow, mintTokens, nameToBigInt, symbolCodeToBigInt } from '@proton/vert';
+import { Asset, Name } from '@greymass/eosio';
 import { NFT, createTestCollection, initialAdminColEdit, transferNfts } from '../helpers/atomicassets.helper.ts';
 import { Auction, addTokens, announceAuction, regMarket } from '../helpers/atomicmarket.helper.ts';
 import {
@@ -52,8 +53,9 @@ const xmdToken = blockchain.createContract('xmd.token', 'node_modules/proton-tsc
 const loanToken = blockchain.createContract('loan.token', 'node_modules/proton-tsc/external/xtokens/xtokens');
 
 // create accounts
-const [powerofsoon, protonpunk, pixelheroes, marco, mitch] = blockchain.createAccounts(
+const [powerofsoon, soonfinance, protonpunk, pixelheroes, marco, mitch] = blockchain.createAccounts(
     'powerofsoon',
+    'soonfinance',
     'protonpunk',
     'pixelheroes',
     'marco',
@@ -65,6 +67,11 @@ export const initContracts = async (...contracts: Array<Account>): Promise<void>
     for (const contract of contracts) {
         await contract.actions.init().send();
     }
+};
+const getAccountBalance = (contract: Account, accountName: string, symbol: string) => {
+    const accountBigInt = nameToBigInt(Name.from(accountName));
+    const symcodeBigInt = symbolCodeToBigInt(Asset.SymbolCode.from(symbol));
+    return contract.tables.accounts(accountBigInt).getTableRow(symcodeBigInt);
 };
 const getGlobals = (): Globals => soonmarket.tables.globals().getTableRows()[0];
 
@@ -83,15 +90,19 @@ before(async () => {
     await createTestCollection(atomicassets, protonpunk);
     await createTestCollection(atomicassets, pixelheroes);
     // tokens
-    await mintTokens(eosioToken, TOKEN_XPR.name, TOKEN_XPR.precision, 10000000.0, 4, [marco, mitch]);
-    await mintTokens(xtokens, TOKEN_XBTC.name, TOKEN_XBTC.precision, 21000000.0, 5, [marco, mitch]);
-    await mintTokens(xtokens, TOKEN_XETH.name, TOKEN_XETH.precision, 100000000.0, 20, [marco, mitch]);
-    await mintTokens(xtokens, TOKEN_XDOGE.name, TOKEN_XDOGE.precision, 128303944202.0, 100000, [marco, mitch]);
-    await mintTokens(xtokens, TOKEN_XUSDC.name, TOKEN_XUSDC.precision, 2588268654.84833, 20000, [marco, mitch]);
-    await mintTokens(xtokens, TOKEN_XMT.name, TOKEN_XMT.precision, 66588888.0, 5000, [marco, mitch]);
-    await mintTokens(xtokens, TOKEN_METAL.name, TOKEN_METAL.precision, 666666666.0, 20000, [marco, mitch]);
-    await mintTokens(loanToken, TOKEN_LOAN.name, TOKEN_LOAN.precision, 100000000.0, 20000, [marco, mitch]); // how to define unlimited?
-    await mintTokens(xmdToken, TOKEN_XMD.name, TOKEN_XMD.precision, 100000000.0, 20000, [marco, mitch]); // how to define unlimited?
+    await mintTokens(eosioToken, TOKEN_XPR.name, TOKEN_XPR.precision, 100_000_000.0, 10_000_000, [
+        marco,
+        mitch,
+        soonmarket,
+    ]);
+    await mintTokens(xtokens, TOKEN_XBTC.name, TOKEN_XBTC.precision, 21_000_000.0, 5, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XETH.name, TOKEN_XETH.precision, 100_000_000.0, 20, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XDOGE.name, TOKEN_XDOGE.precision, 128_303_944_202.0, 100_000, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XUSDC.name, TOKEN_XUSDC.precision, 2_588_268_654.84833, 20_000, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_XMT.name, TOKEN_XMT.precision, 66_588_888.0, 5_000, [marco, mitch]);
+    await mintTokens(xtokens, TOKEN_METAL.name, TOKEN_METAL.precision, 666_666_666.0, 20_000, [marco, mitch]);
+    await mintTokens(loanToken, TOKEN_LOAN.name, TOKEN_LOAN.precision, 100_000_000.0, 20_000, [marco, mitch]); // how to define unlimited?
+    await mintTokens(xmdToken, TOKEN_XMD.name, TOKEN_XMD.precision, 100_000_000.0, 20_000, [marco, mitch]); // how to define unlimited?
     // atomicmarket
     await regMarket(atomicmarket, soonmarket);
     await addTokens(atomicmarket, eosioToken, [TOKEN_XPR]);
@@ -398,6 +409,38 @@ describe('SoonMarket', () => {
                     .send(),
                 eosio_assert(ERROR_COLLECTION_ALREADY_VERIFIED),
             );
+        });
+    });
+    describe('forward marketplace revenue handling', () => {
+        it('do not forward incoming token transfer from marco', async () => {
+            const amount = '1337.0000 XPR';
+            await eosioToken.actions
+                .transfer(['marco', 'soonmarket', `${amount}`, `no forwarding`])
+                .send('marco@active');
+            const marco = getAccountBalance(eosioToken, 'marco', 'XPR');
+            expect('9998663.0000 XPR').equal(marco.balance);
+            const soonmarketAcc = getAccountBalance(eosioToken, 'soonmarket', 'XPR');
+            expect('10001337.0000 XPR').equal(soonmarketAcc.balance);
+            const soonfinanceAcc = getAccountBalance(eosioToken, 'soonfinance', 'XPR');
+            expect(soonfinanceAcc).undefined;
+        });
+        it('forward token transfer from atomicmarket', async () => {
+            const amount = `1337.0000 XPR`;
+            // deposit to atomicmarket
+            await eosioToken.actions
+                .transfer(['soonmarket', 'atomicmarket', `${amount}`, `deposit`])
+                .send('soonmarket@active');
+            let soonmarketAcc = getAccountBalance(eosioToken, 'soonmarket', 'XPR');
+            expect('9998663.0000 XPR').equal(soonmarketAcc.balance);
+            let atomicmarketAcc = getAccountBalance(eosioToken, 'atomicmarket', 'XPR');
+            expect(amount).equal(atomicmarketAcc.balance);
+            await atomicmarket.actions.withdraw(['soonmarket', amount]).send('soonmarket@active');
+            soonmarketAcc = getAccountBalance(eosioToken, 'soonmarket', 'XPR');
+            expect('9998663.0000 XPR').equal(soonmarketAcc.balance);
+            atomicmarketAcc = getAccountBalance(eosioToken, 'atomicmarket', 'XPR');
+            expect('0.0000 XPR').equal(atomicmarketAcc.balance);
+            const soonfinanceAcc = getAccountBalance(eosioToken, 'soonfinance', 'XPR');
+            expect(amount).equal(soonfinanceAcc.balance);
         });
     });
 });
