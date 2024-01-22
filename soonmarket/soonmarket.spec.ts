@@ -128,7 +128,6 @@ before(async () => {
     // add blacklisted collection
     await soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'testing cool shit here :-)', []]).send();
     const globals = getGlobals();
-    console.log(JSON.stringify(globals));
     expect(globals.goldSpotId).equal(goldSpot.asset_id);
     expect(globals.silverSpotTemplateId).equal(silverSpots[0].template_id);
     expect(globals.verifiedCount).equal(1);
