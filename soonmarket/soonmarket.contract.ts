@@ -229,7 +229,7 @@ class SoonMarket extends Contract {
         check(auction.assets_transferred, ERROR_AUCTION_NOT_STARTED);
         // only allow if the expected end of the auction is 1 hour or more
         check(
-            auction.end_time > SafeMath.add(currentTimePoint().secSinceEpoch(), ONE_HOUR),
+            auction.end_time >= SafeMath.add(currentTimePoint().secSinceEpoch(), ONE_HOUR),
             ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION,
         );
         // determine required auction duration for gold spot

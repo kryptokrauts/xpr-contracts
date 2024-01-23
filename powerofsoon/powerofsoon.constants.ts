@@ -21,3 +21,9 @@ export const ORACLES_FEED_NAME_XPRUSD: string = 'XPR/USD';
 // auction default start prices in USD
 export const GOLD_AUCTION_START_PRICE_USD: u32 = 30;
 export const SILVER_AUCTION_START_PRICE_USD: u32 = 5;
+
+// durations in seconds
+export const ONE_HOUR = 3_600;
+export const ONE_DAY = 86_400;
+export const ONE_WEEK = 604_800;
+export const TWO_WEEKS = 1_209_600;

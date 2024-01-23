@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { Account, Blockchain, expectToThrow, mintTokens, nameToBigInt, symbolCodeToBigInt } from '@proton/vert';
-import { Asset, Name } from '@greymass/eosio';
+import { Asset, Name, TimePointSec } from '@greymass/eosio';
 import { NFT, createTestCollection, initialAdminColEdit, transferNfts } from '../helpers/atomicassets.helper.ts';
 import { Auction, addTokens, announceAuction, regMarket } from '../helpers/atomicmarket.helper.ts';
 import {
@@ -63,7 +63,7 @@ const [powerofsoon, soonfinance, protonpunk, pixelheroes, marco, mitch] = blockc
 );
 
 // helpers
-export const initContracts = async (...contracts: Array<Account>): Promise<void> => {
+const initContracts = async (...contracts: Array<Account>): Promise<void> => {
     for (const contract of contracts) {
         await contract.actions.init().send();
     }
@@ -245,15 +245,14 @@ describe('SoonMarket', () => {
                     eosio_assert(ERROR_AUCTION_NOT_STARTED),
                 );
             });
-            it('reject if remaining auction time is too low or expired', async () => {
-                const invalidRemainingTime = ONE_HOUR - 1;
+            it('reject if remaining auction time is too low', async () => {
                 await announceAuction(
                     atomicmarket,
                     protonpunk,
                     [cypherToAuction],
                     1337,
                     TOKEN_XPR,
-                    invalidRemainingTime,
+                    ONE_HOUR - 1, // invalid, must be >= ONE_HOUR
                     soonmarket,
                     atomicassets,
                     true,
@@ -263,8 +262,26 @@ describe('SoonMarket', () => {
                     transferNfts(atomicassets, marco, soonmarket, [goldSpot], `auction ${auction.auction_id}`),
                     eosio_assert(ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION),
                 );
-
-                // TODO test for expired auction
+            });
+            it('reject if remaining auction is expired', async () => {
+                await announceAuction(
+                    atomicmarket,
+                    protonpunk,
+                    [cypherToAuction],
+                    1337,
+                    TOKEN_XPR,
+                    ONE_HOUR,
+                    soonmarket,
+                    atomicassets,
+                    true,
+                );
+                const auction: Auction = atomicmarket.tables.auctions().getTableRows(undefined, { limit: 1 })[0];
+                // let auction expire
+                blockchain.addTime(TimePointSec.fromInteger(ONE_HOUR + 1));
+                await expectToThrow(
+                    transferNfts(atomicassets, marco, soonmarket, [goldSpot], `auction ${auction.auction_id}`),
+                    eosio_assert(ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION),
+                );
             });
             it('expect log actions to fail if called from other account', async () => {
                 await expectToThrow(
@@ -326,11 +343,11 @@ describe('SoonMarket', () => {
                 // get auction
                 const auction: Auction = atomicmarket.tables.auctions().getTableRows(undefined, { limit: 1 })[0];
                 // promote by transferring gold spot with valid memo to soonmarket
-                await transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], `auction ${auction.auction_id}`),
-                    // // powerofsoon is new owner
-                    (spotNft = atomicassets.tables
-                        .assets(nameToBigInt(powerofsoon.name))
-                        .getTableRow(silverSpots[0].asset_id));
+                await transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], `auction ${auction.auction_id}`);
+                // // powerofsoon is new owner
+                spotNft = atomicassets.tables
+                    .assets(nameToBigInt(powerofsoon.name))
+                    .getTableRow(silverSpots[0].asset_id);
                 expect(spotNft).not.undefined;
                 expect(getGlobals().silverPromoCount).equal(1);
             });

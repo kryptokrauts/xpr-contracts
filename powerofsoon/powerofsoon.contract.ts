@@ -35,7 +35,7 @@ import {
 } from '../external/atomicmarket/atomicmarket.inline';
 import { Globals } from './powerofsoon.tables';
 import { Globals as SoonMarketGlobals } from '../soonmarket/soonmarket.tables';
-import { sendAuctionLatestSilverSpot } from './powerofsoon.inline';
+import { sendAuctionLatestSilverSpot, sendClaimMarketBalance } from './powerofsoon.inline';
 import { Transfer, sendTransferToken } from 'proton-tsc/token';
 
 const SOONMARKET = Name.fromString('soonmarket');
@@ -81,6 +81,8 @@ class PowerOfSoon extends Contract {
     claimAuctionIncome(auctionId: u64): void {
         // incoming token transfer will trigger payment forward to soonfinance
         sendAuctionClaimSeller(this.contract, auctionId);
+        // also claim market balance to withdraw royalties
+        sendClaimMarketBalance(this.contract);
     }
 
     @action('cancelauct') // can be called by anybody
@@ -92,7 +94,6 @@ class PowerOfSoon extends Contract {
     @action('mintfreespot')
     mintSilverSpot(recipient: Name, memo: string): void {
         requireAuth(this.contract);
-        // TODO test if this can be called without a memo (memo should be visible on explorer)
         const soonmarketGlobals = this.smGlobals.get();
         sendMintAsset(
             this.contract,
@@ -170,7 +171,7 @@ class PowerOfSoon extends Contract {
                 } else {
                     const memoSplit = actionParams.memo.split(' ');
                     check(memoSplit.length == 2, ERROR_INVALID_MEMO);
-                    const duration: u32 = <u32>Number.parseInt(actionParams.memo[1]);
+                    const duration: u32 = U32.parseInt(memoSplit[1]);
                     this.auctionGoldSpot(actionParams.asset_ids[0], xprUsdPrice, duration);
                 }
             }
@@ -212,9 +213,9 @@ class PowerOfSoon extends Contract {
             nftId,
             'fatal error - should never happen',
         );
-        sendBurnAsset(ATOMICASSETS_CONTRACT, this.contract, nftId);
+        sendBurnAsset(this.contract, this.contract, nftId);
         sendMintAsset(
-            ATOMICASSETS_CONTRACT,
+            this.contract,
             this.contract,
             asset.collection_name,
             asset.schema_name,
@@ -224,9 +225,8 @@ class PowerOfSoon extends Contract {
             [],
             [],
         );
-        const startingPrice: Asset = this.getSilverSpotStartingPrice(xprUsdPrice);
         const duration: u32 = this.smGlobals.get().silverPromoDuration;
-        this.startAuction(nftId, startingPrice, duration);
+        sendAuctionLatestSilverSpot(this.contract, duration);
     }
 
     auctionGoldSpot(nftId: u64, xprUsdPrice: f64, duration: u32): void {
