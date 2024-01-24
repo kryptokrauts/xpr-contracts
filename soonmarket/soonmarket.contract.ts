@@ -1,8 +1,9 @@
-import { Name, Contract, TableStore, check, currentReceiver, SafeMath, currentTimePoint, Singleton } from 'proton-tsc';
-import { ATOMICASSETS_CONTRACT, Assets, Collections, sendTransferNfts } from 'proton-tsc/atomicassets';
+import { Name, Contract, TableStore, check, SafeMath, currentTimePoint, Singleton, unpackActionData } from 'proton-tsc';
+import { ATOMICASSETS_CONTRACT, Assets, Collections, TransferNfts, sendTransferNfts } from 'proton-tsc/atomicassets';
 
 import { ATOMICMARKET_CONTRACT } from '../external/atomicmarket/atomicmarket.constants';
-import { Auctions } from '../external/atomicmarket/atomicmarket.tables';
+import { Auctions, Balances } from '../external/atomicmarket/atomicmarket.tables';
+import { sendWithdraw } from '../external/atomicmarket/atomicmarket.inline';
 import {
     ERROR_AUCTION_NOT_EXISTS,
     ERROR_COLLECTION_NOT_EXISTS,
@@ -19,6 +20,7 @@ import {
     ERROR_COLLECTION_ALREADY_VERIFIED,
     ERROR_COLLECTION_NOT_BLACKLISTED,
     ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED,
+    ERROR_MARKET_BALANCE_NOT_FOUND,
     ONE_HOUR,
     ONE_DAY,
     SILVER_SPOT_AUCTIONS_ENABLED,
@@ -32,6 +34,7 @@ import {
 import { requireAuth } from 'as-chain';
 import { sendLogAuctPromo, sendLogColPromo } from './soonmarket.inline';
 import { CollectionsBlacklist, CollectionsVerified, Globals } from './soonmarket.tables';
+import { Transfer, sendTransferToken } from 'proton-tsc/token';
 
 const POWEROFSOON = Name.fromString('powerofsoon');
 
@@ -42,9 +45,26 @@ class SoonMarket extends Contract {
     // globals singleton table
     globalsSingleton: Singleton<Globals> = new Singleton<Globals>(this.receiver);
 
-    // other tables
+    // soonmarket tables
     collectionsBlacklist: TableStore<CollectionsBlacklist> = new TableStore<CollectionsBlacklist>(this.receiver);
     collectionsVerified: TableStore<CollectionsVerified> = new TableStore<CollectionsVerified>(this.receiver);
+
+    // atomicassets tables
+    aaAssets: TableStore<Assets> = new TableStore<Assets>(ATOMICASSETS_CONTRACT, this.receiver);
+    aaCollections: TableStore<Collections> = new TableStore<Collections>(ATOMICASSETS_CONTRACT);
+
+    // atomicmarket tables
+    amAuctions: TableStore<Auctions> = new TableStore<Auctions>(ATOMICMARKET_CONTRACT);
+    amBalances: TableStore<Balances> = new TableStore<Balances>(ATOMICMARKET_CONTRACT);
+
+    @action('clmktbalance') // can be called by anybody
+    claimMarketBalance(): void {
+        const balancesRow = this.amBalances.requireGet(this.contract.N, ERROR_MARKET_BALANCE_NOT_FOUND);
+        for (let i = 0; i < balancesRow.quantities.length; i++) {
+            // incoming token transfer will trigger payment forward to soonfinance
+            sendWithdraw(this.contract, this.contract, balancesRow.quantities[i]);
+        }
+    }
 
     @action('setspots')
     setSpots(goldSpotId: u64, silverSpotTemplateId: u32): void {
@@ -131,37 +151,51 @@ class SoonMarket extends Contract {
         this.collectionsVerified.remove(verifiedRow);
     }
 
+    // handle transfer notification
     @action('transfer', notify)
-    onReceive(from: Name, to: Name, asset_ids: u64[], memo: string): void {
-        // skip outgoing NFT transfers
-        if (from == this.contract) {
-            return;
-        }
-        // handling incoming NFT transfer
-        if (to == this.contract) {
-            check(asset_ids.length == 1, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED);
-            const memoWords = memo.split(' ');
+    onTransfer(): void {
+        // notification comes from atomicassets
+        if (ATOMICASSETS_CONTRACT == this.firstReceiver) {
+            // expecting an NFT transfer
+            const actionParams = unpackActionData<TransferNfts>();
+            // skip outgoing NFT transfers
+            if (actionParams.from == this.contract) {
+                return;
+            }
+            check(actionParams.asset_ids.length == 1, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED);
+            const memoWords = actionParams.memo.split(' ');
             check(memoWords.length == 2, ERROR_INVALID_WORD_COUNT);
             check(this.isValidPromotionType(memoWords[0]), ERROR_INVALID_PROMOTION_TYPE);
-            this.validateAndHandleSpot(asset_ids[0], memoWords[0], memoWords[1], from);
+            this.validateAndHandleSpot(actionParams.asset_ids[0], memoWords[0], memoWords[1], actionParams.from);
+        } else {
+            // otherwise we expect a regular token transfer
+            const actionParams = unpackActionData<Transfer>();
+            // skip outgoing transfers & transfers from other accounts than atomicmarket
+            if (actionParams.from == this.contract || ATOMICMARKET_CONTRACT != actionParams.from) {
+                return;
+            }
+            sendTransferToken(
+                this.firstReceiver,
+                this.contract,
+                Name.fromString('soonfinance'),
+                actionParams.quantity,
+                'marketplace revenue',
+            );
         }
     }
 
     @action('logcolpromo')
     logCollectionPromotion(collection: Name, promotedBy: Name, spotType: string, promotionEnd: u32): void {
-        requireAuth(currentReceiver());
+        requireAuth(this.contract);
     }
 
     @action('logauctpromo')
     logAuctionPromotion(auctionId: string, promotedBy: Name, spotType: string): void {
-        requireAuth(currentReceiver());
+        requireAuth(this.contract);
     }
 
     checkValidSilverSpot(spotNftId: u64): void {
-        const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, currentReceiver()).requireGet(
-            spotNftId,
-            'fatal error - should never happen',
-        );
+        const asset = this.aaAssets.requireGet(spotNftId, 'fatal error - should never happen');
         check(
             this.globalsSingleton.get().silverSpotTemplateId == asset.template_id,
             ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED,
@@ -183,25 +217,19 @@ class SoonMarket extends Contract {
     }
 
     validateCollection(collection: Name): void {
-        new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(collection.N, ERROR_COLLECTION_NOT_EXISTS);
+        this.aaCollections.requireGet(collection.N, ERROR_COLLECTION_NOT_EXISTS);
         this.checkIfVerified(collection);
     }
 
     validateAuction(auctionId: string): u32 {
-        const auction = new TableStore<Auctions>(ATOMICMARKET_CONTRACT).requireGet(
-            <u64>parseInt(auctionId),
-            ERROR_AUCTION_NOT_EXISTS,
-        );
-        const collection = new TableStore<Collections>(ATOMICASSETS_CONTRACT).requireGet(
-            auction.collection_name.N,
-            ERROR_COLLECTION_NOT_EXISTS,
-        );
+        const auction = this.amAuctions.requireGet(<u64>parseInt(auctionId), ERROR_AUCTION_NOT_EXISTS);
+        const collection = this.aaCollections.requireGet(auction.collection_name.N, ERROR_COLLECTION_NOT_EXISTS);
         this.checkIfVerified(collection.collection_name);
         // only allow if assets are transferred / auction started
         check(auction.assets_transferred, ERROR_AUCTION_NOT_STARTED);
         // only allow if the expected end of the auction is 1 hour or more
         check(
-            auction.end_time > SafeMath.add(currentTimePoint().secSinceEpoch(), ONE_HOUR),
+            auction.end_time >= SafeMath.add(currentTimePoint().secSinceEpoch(), ONE_HOUR),
             ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION,
         );
         // determine required auction duration for gold spot
@@ -227,7 +255,7 @@ class SoonMarket extends Contract {
             sendLogAuctPromo(this.contract, promoTargetId, promotedBy, spotType);
             const memoAction =
                 spotType == SPOT_TYPE_GOLD ? `${ACTION_AUCTION} ${goldSpotAuctionDuration}` : ACTION_BURN_MINT_AUCTION;
-            sendTransferNfts(currentReceiver(), POWEROFSOON, [spotNftId], memoAction);
+            sendTransferNfts(this.contract, POWEROFSOON, [spotNftId], memoAction);
         } else if (PROMO_TYPE_COLLECTION == promoType) {
             const collection = Name.fromString(promoTargetId);
             this.validateCollection(collection);
@@ -243,7 +271,7 @@ class SoonMarket extends Contract {
             );
             const memoAction =
                 spotType == SPOT_TYPE_GOLD ? `${ACTION_AUCTION} ${goldSpotAuctionDuration}` : ACTION_BURN_MINT_AUCTION;
-            sendTransferNfts(currentReceiver(), POWEROFSOON, [spotNftId], memoAction);
+            sendTransferNfts(this.contract, POWEROFSOON, [spotNftId], memoAction);
         }
         if (spotType == SPOT_TYPE_GOLD) {
             globals.goldPromoCount++;

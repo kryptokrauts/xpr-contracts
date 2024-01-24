@@ -1,6 +1,5 @@
 import { ActionData, InlineAction, Name, PermissionLevel } from 'proton-tsc';
 
-// Create packer class for object to send
 @packer
 export class LogCollectionPromotion extends ActionData {
     constructor(
@@ -13,7 +12,6 @@ export class LogCollectionPromotion extends ActionData {
     }
 }
 
-// Create packer class for object to send
 @packer
 export class LogAuctionPromotion extends ActionData {
     constructor(

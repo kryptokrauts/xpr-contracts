@@ -2,6 +2,8 @@ import { Account } from '@proton/vert';
 import { TokenSymbol, getTokenAmountActionParam } from './common.ts';
 import { NFT, transferNfts } from './atomicassets.helper.ts';
 
+export const ERROR_AUCTION_NOT_FINISHED = 'The auction is not finished yet';
+
 export interface Auction {
     auction_id: number;
     seller: string;
@@ -50,7 +52,7 @@ export const announceAuction = async (
             nfts.map((a) => Number.parseInt(a.asset_id!)),
             getTokenAmountActionParam(startingPrice, token),
             duration,
-            makerMarketplace.name.toString(),
+            makerMarketplace.name,
         ])
         .send(`${seller.name.toString()}@active`);
     if (transfer) {
@@ -65,4 +67,24 @@ export const startAnnouncedAuction = async (
     nfts: Array<NFT>,
 ) => {
     transferNfts(atomicassets!, seller, atomicmarket, nfts, 'auction');
+};
+
+export const auctionBid = async (
+    atomicmarket: Account,
+    bidder: Account,
+    auctionId: u64,
+    bid: number,
+    token: TokenSymbol,
+    assetConctract: Account,
+    takerMarketplace: Account,
+    transferTokens: boolean = true,
+) => {
+    if (transferTokens) {
+        await assetConctract.actions
+            .transfer([bidder.name, atomicmarket.name, getTokenAmountActionParam(bid, token), 'deposit'])
+            .send(`${bidder.name.toString()}@active`);
+    }
+    await atomicmarket.actions
+        .auctionbid([bidder.name, auctionId, getTokenAmountActionParam(bid, token), takerMarketplace.name])
+        .send(`${bidder.name.toString()}@active`);
 };
