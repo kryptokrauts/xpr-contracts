@@ -27,6 +27,14 @@ import {
     regMarket,
 } from '../helpers/atomicmarket.helper.ts';
 import {
+    ERROR_AUCTION_HAS_BIDS,
+    ERROR_AUCTION_NOT_EXISTS,
+    ERROR_AUCTION_STILL_RUNNING,
+    ERROR_INVALID_AUCTION_SELLER,
+    ERROR_INVALID_REAUCT_DURATION,
+    ERROR_INVALID_START_PRICE,
+    ERROR_MARKET_BALANCE_NOT_FOUND,
+    ERROR_MISSING_REQUIRED_AUTHORITY_POWEROFSOON,
     ONE_DAY,
     ONE_HOUR,
     ONE_WEEK,
@@ -314,6 +322,75 @@ describe('PowerOfSoon', () => {
             // expect a new auction running with default duration
             const newAuction: Auction = atomicmarket.tables.auctions().getTableRow(bnToBigInt(2));
             expect(newAuction.end_time).equal(blockchain.timestamp.toMilliseconds() / 1000 + ONE_WEEK);
+        });
+    });
+    describe('revert paths', () => {
+        it('reject setting start price with 0', async () => {
+            await expectToThrow(
+                powerofsoon.actions.setstartpric([0, 1]).send(),
+                eosio_assert(ERROR_INVALID_START_PRICE),
+            );
+            await expectToThrow(
+                powerofsoon.actions.setstartpric([1, 0]).send(),
+                eosio_assert(ERROR_INVALID_START_PRICE),
+            );
+        });
+        it('reject setting re-auction duration < one day', async () => {
+            await expectToThrow(
+                powerofsoon.actions.setreauctdur([ONE_DAY - 1]).send(),
+                eosio_assert(ERROR_INVALID_REAUCT_DURATION),
+            );
+        });
+        it('reject claiming non existing market balance', async () => {
+            await expectToThrow(
+                powerofsoon.actions.clmktbalance().send(),
+                eosio_assert(ERROR_MARKET_BALANCE_NOT_FOUND),
+            );
+        });
+        it('reject cancel of auction', async () => {
+            await expectToThrow(powerofsoon.actions.cancelauct([1]).send(), eosio_assert(ERROR_AUCTION_NOT_EXISTS));
+            await announceAuction(
+                atomicmarket,
+                marco,
+                [silverSpots[0]],
+                100,
+                TOKEN_XPR,
+                ONE_HOUR,
+                soonmarket,
+                atomicassets,
+                true,
+            );
+            blockchain.addTime(TimePointSec.fromInteger(ONE_HOUR + 1));
+            await expectToThrow(powerofsoon.actions.cancelauct([1]).send(), eosio_assert(ERROR_INVALID_AUCTION_SELLER));
+            await powerofsoon.actions.mintauctspot([ONE_HOUR]).send();
+            await expectToThrow(powerofsoon.actions.cancelauct([2]).send(), eosio_assert(ERROR_AUCTION_STILL_RUNNING));
+            const bidAmount = SILVER_AUCTION_START_PRICE_USD / XPR_USD_PRICE;
+            await auctionBid(atomicmarket, mitch, 2, bidAmount, TOKEN_XPR, eosioToken, soonmarket);
+            blockchain.addTime(TimePointSec.fromInteger(ONE_HOUR + 1));
+            await expectToThrow(powerofsoon.actions.cancelauct([2]).send(), eosio_assert(ERROR_AUCTION_HAS_BIDS));
+        });
+        it('reject with missing authority', async () => {
+            const sender = `${marco.name}@active`;
+            await expectToThrow(
+                powerofsoon.actions.setstartpric([1, 1]).send(sender),
+                ERROR_MISSING_REQUIRED_AUTHORITY_POWEROFSOON,
+            );
+            await expectToThrow(
+                powerofsoon.actions.setreauctdur([TWO_WEEKS]).send(sender),
+                ERROR_MISSING_REQUIRED_AUTHORITY_POWEROFSOON,
+            );
+            await expectToThrow(
+                powerofsoon.actions.mintfreespot([marco.name, 'should fail']).send(sender),
+                ERROR_MISSING_REQUIRED_AUTHORITY_POWEROFSOON,
+            );
+            await expectToThrow(
+                powerofsoon.actions.mintauctspot([ONE_HOUR]).send(sender),
+                ERROR_MISSING_REQUIRED_AUTHORITY_POWEROFSOON,
+            );
+            await expectToThrow(
+                powerofsoon.actions.auctlatest([ONE_HOUR]).send(sender),
+                ERROR_MISSING_REQUIRED_AUTHORITY_POWEROFSOON,
+            );
         });
     });
 });

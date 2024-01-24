@@ -37,7 +37,6 @@ import {
     ONE_HOUR,
     ERROR_COLLECTION_ALREADY_PROMOTED,
     ONE_WEEK,
-    ONE_DAY,
 } from './soonmarket.constants.ts';
 import { Globals, SilverSpotPromotions } from './soonmarket.tables.ts';
 

@@ -1,5 +1,5 @@
 // error messages
-export const ERROR_NEGATIVE_START_PRICE: string = 'negative start price not allowed';
+export const ERROR_INVALID_START_PRICE: string = 'start price must be greater than 0';
 export const ERROR_MARKET_BALANCE_NOT_FOUND: string = 'market balance not found';
 export const ERROR_ONLY_ONE_SPOT_NFT_ALLOWED: string = 'only one spot can nft be redeemed for promotion';
 export const ERROR_INVALID_ACTION: string = 'invalid action';
@@ -14,6 +14,9 @@ export const ERROR_AUCTION_STILL_RUNNING: string = 'auction still running';
 export const ERROR_INVALID_AUCTION_SELLER: string = 'auction created by somebody else';
 export const ERROR_AUCTION_HAS_BIDS: string = 'auction has bids and cannot be cancelled';
 export const ERROR_INVALID_REAUCT_DURATION: string = 're-auction duration must be longer than one day';
+
+// error missing authority
+export const ERROR_MISSING_REQUIRED_AUTHORITY_POWEROFSOON: string = 'missing required authority powerofsoon';
 
 // actions
 export const ACTION_AUCTION = 'auction';

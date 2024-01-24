@@ -29,7 +29,7 @@ import {
     ERROR_FEED_DATA_NOT_FOUND,
     ERROR_INVALID_ACTION,
     ERROR_MARKET_BALANCE_NOT_FOUND,
-    ERROR_NEGATIVE_START_PRICE,
+    ERROR_INVALID_START_PRICE,
     ERROR_ONLY_ONE_SPOT_NFT_ALLOWED,
     ERROR_XPRUSD_FEED_NOT_FOUND,
     ERROR_XPRUSD_WRONG_FEED_NAME,
@@ -79,7 +79,7 @@ class PowerOfSoon extends Contract {
     @action('setstartpric')
     setStartPrices(goldAuctStartingPriceUsd: u32, silverAuctStartingPriceUsd: u32): void {
         requireAuth(this.contract);
-        check(goldAuctStartingPriceUsd > 0 && silverAuctStartingPriceUsd > 0, ERROR_NEGATIVE_START_PRICE);
+        check(goldAuctStartingPriceUsd > 0 && silverAuctStartingPriceUsd > 0, ERROR_INVALID_START_PRICE);
         const globals = this.globalsSingleton.get();
         globals.goldAuctStartPriceUsd = goldAuctStartingPriceUsd;
         globals.silverAuctStartPriceUsd = silverAuctStartingPriceUsd;
