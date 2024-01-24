@@ -16,6 +16,7 @@ export const ERROR_INVALID_PROMOTION_TYPE_AUCTION_GOLD_ONLY =
 export const ERROR_INVALID_NFT_SILVER_SPOT_EXPECTED: string = 'invalid nft - silver spot expected';
 export const ERROR_AUCTION_NOT_STARTED: string = 'auction not started yet';
 export const ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION: string = 'auction expired or close to expiration';
+export const ERROR_COLLECTION_ALREADY_PROMOTED: string = 'collection already promoted';
 
 // error missing authority
 export const ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET: string = 'missing required authority soonmarket';
@@ -24,7 +25,6 @@ export const ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET: string = 'missing requ
 export const SPOT_COLLECTION_NAME = '323154322551';
 export const GOLD_SPOT_ID_MAINNET = 4398046764318;
 export const SILVER_SPOT_TEMPLATE_ID_MAINNET = 51066;
-export const SILVER_SPOT_AUCTIONS_ENABLED = true; // TODO remove once we update code for new market
 
 // promo types
 export const PROMO_TYPE_AUCTION = 'auction';

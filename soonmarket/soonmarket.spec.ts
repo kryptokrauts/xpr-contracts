@@ -35,8 +35,11 @@ import {
     ERROR_COLLECTION_NOT_VERIFIED,
     ERROR_COLLECTION_ALREADY_VERIFIED,
     ONE_HOUR,
+    ERROR_COLLECTION_ALREADY_PROMOTED,
+    ONE_WEEK,
+    ONE_DAY,
 } from './soonmarket.constants.ts';
-import { Globals } from './soonmarket.tables.ts';
+import { Globals, SilverSpotPromotions } from './soonmarket.tables.ts';
 
 const blockchain = new Blockchain();
 
@@ -180,7 +183,7 @@ describe('SoonMarket', () => {
                     eosio_assert(ERROR_COLLECTION_NOT_EXISTS),
                 );
             });
-            xit('reject auction promotion with silver spot (TODO: enable again once we upgrade the code)', async () => {
+            it('reject auction promotion with silver spot', async () => {
                 await expectToThrow(
                     transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], 'auction 1337'),
                     eosio_assert(ERROR_INVALID_PROMOTION_TYPE_AUCTION_GOLD_ONLY),
@@ -219,6 +222,26 @@ describe('SoonMarket', () => {
                     transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${COLLECTION_PIXELHEROES}`),
                     eosio_assert(ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED),
                 );
+            });
+            it('reject if collection is already promoted', async () => {
+                let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[0].asset_id);
+                // valid promotion
+                await transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${COLLECTION_CYPHER_GANG}`);
+                // promotion still running
+                spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[1].asset_id);
+                await expectToThrow(
+                    transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${COLLECTION_CYPHER_GANG}`),
+                    eosio_assert(ERROR_COLLECTION_ALREADY_PROMOTED),
+                );
+                // let promotion expire
+                blockchain.addTime(TimePointSec.fromInteger(ONE_WEEK + 1));
+                // allow again once promotion ended
+                await transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${COLLECTION_CYPHER_GANG}`);
+                const promoEntry: SilverSpotPromotions = soonmarket.tables
+                    .silverpromos()
+                    .getTableRow(nameToBigInt(COLLECTION_CYPHER_GANG));
+                expect(promoEntry.promoCount).equal(2);
+                expect(promoEntry.lastPromoEnd).equal(blockchain.timestamp.toMilliseconds() / 1000 + ONE_WEEK);
             });
             it('reject if auction not exists', async () => {
                 await expectToThrow(
@@ -314,37 +337,6 @@ describe('SoonMarket', () => {
                     `collection ${COLLECTION_CYPHER_GANG}`,
                 );
                 // powerofsoon is new owner
-                spotNft = atomicassets.tables
-                    .assets(nameToBigInt(powerofsoon.name))
-                    .getTableRow(silverSpots[0].asset_id);
-                expect(spotNft).not.undefined;
-                expect(getGlobals().silverPromoCount).equal(1);
-            });
-            it('promotion of NFT auction via silver spot (TODO: remove once we upgrade the code and disallow this)', async () => {
-                // marco is owner, powerofsoon not
-                let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(silverSpots[0].asset_id);
-                expect(spotNft).not.undefined;
-                spotNft = atomicassets.tables
-                    .assets(nameToBigInt(powerofsoon.name))
-                    .getTableRow(silverSpots[0].asset_id);
-                expect(spotNft).undefined;
-                // announce & start auction
-                await announceAuction(
-                    atomicmarket,
-                    protonpunk,
-                    [cypherToAuction],
-                    1337,
-                    TOKEN_XPR,
-                    86400,
-                    soonmarket,
-                    atomicassets,
-                    true,
-                );
-                // get auction
-                const auction: Auction = atomicmarket.tables.auctions().getTableRows(undefined, { limit: 1 })[0];
-                // promote by transferring gold spot with valid memo to soonmarket
-                await transferNfts(atomicassets, marco, soonmarket, [silverSpots[0]], `auction ${auction.auction_id}`);
-                // // powerofsoon is new owner
                 spotNft = atomicassets.tables
                     .assets(nameToBigInt(powerofsoon.name))
                     .getTableRow(silverSpots[0].asset_id);

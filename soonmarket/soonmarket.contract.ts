@@ -23,17 +23,17 @@ import {
     ERROR_MARKET_BALANCE_NOT_FOUND,
     ONE_HOUR,
     ONE_DAY,
-    SILVER_SPOT_AUCTIONS_ENABLED,
     SPOT_TYPE_GOLD,
     SPOT_TYPE_SILVER,
     PROMO_TYPE_AUCTION,
     PROMO_TYPE_COLLECTION,
     ACTION_AUCTION,
     ACTION_BURN_MINT_AUCTION,
+    ERROR_COLLECTION_ALREADY_PROMOTED,
 } from './soonmarket.constants';
 import { requireAuth } from 'as-chain';
 import { sendLogAuctPromo, sendLogColPromo } from './soonmarket.inline';
-import { CollectionsBlacklist, CollectionsVerified, Globals } from './soonmarket.tables';
+import { CollectionsBlacklist, CollectionsVerified, Globals, SilverSpotPromotions } from './soonmarket.tables';
 import { Transfer, sendTransferToken } from 'proton-tsc/token';
 
 const POWEROFSOON = Name.fromString('powerofsoon');
@@ -46,6 +46,7 @@ class SoonMarket extends Contract {
     globalsSingleton: Singleton<Globals> = new Singleton<Globals>(this.receiver);
 
     // soonmarket tables
+    silverSpotPromotions: TableStore<SilverSpotPromotions> = new TableStore<SilverSpotPromotions>(this.receiver);
     collectionsBlacklist: TableStore<CollectionsBlacklist> = new TableStore<CollectionsBlacklist>(this.receiver);
     collectionsVerified: TableStore<CollectionsVerified> = new TableStore<CollectionsVerified>(this.receiver);
 
@@ -194,6 +195,15 @@ class SoonMarket extends Contract {
         requireAuth(this.contract);
     }
 
+    checkAndGetExistingSilverPromotion(collection: Name): SilverSpotPromotions | null {
+        const existingEntry = this.silverSpotPromotions.get(collection.N);
+        if (existingEntry != null) {
+            check(existingEntry.lastPromoEnd < currentTimePoint().secSinceEpoch(), ERROR_COLLECTION_ALREADY_PROMOTED);
+            return existingEntry;
+        }
+        return null;
+    }
+
     checkValidSilverSpot(spotNftId: u64): void {
         const asset = this.aaAssets.requireGet(spotNftId, 'fatal error - should never happen');
         check(
@@ -243,11 +253,7 @@ class SoonMarket extends Contract {
         const globals = this.globalsSingleton.get();
         let spotType: string = globals.goldSpotId == spotNftId ? SPOT_TYPE_GOLD : SPOT_TYPE_SILVER;
         if (PROMO_TYPE_AUCTION == promoType) {
-            // TODO remove silver spot check in new market
-            check(
-                globals.goldSpotId == spotNftId || SILVER_SPOT_AUCTIONS_ENABLED,
-                ERROR_INVALID_PROMOTION_TYPE_AUCTION_GOLD_ONLY,
-            );
+            check(globals.goldSpotId == spotNftId, ERROR_INVALID_PROMOTION_TYPE_AUCTION_GOLD_ONLY);
             const goldSpotAuctionDuration = this.validateAuction(promoTargetId);
             if (globals.goldSpotId != spotNftId) {
                 this.checkValidSilverSpot(spotNftId);
@@ -259,11 +265,20 @@ class SoonMarket extends Contract {
         } else if (PROMO_TYPE_COLLECTION == promoType) {
             const collection = Name.fromString(promoTargetId);
             this.validateCollection(collection);
-            let promoDuration = SPOT_TYPE_GOLD ? globals.goldPromoDuration : globals.silverPromoDuration;
+            const promoDuration = spotType == SPOT_TYPE_GOLD ? globals.goldPromoDuration : globals.silverPromoDuration;
+            const promotionEnd = <u32>SafeMath.add(currentTimePoint().secSinceEpoch(), promoDuration);
             if (SPOT_TYPE_GOLD != spotType) {
                 this.checkValidSilverSpot(spotNftId);
+                let existingEntry = this.checkAndGetExistingSilverPromotion(collection);
+                if (existingEntry != null) {
+                    existingEntry.lastPromoEnd = promotionEnd;
+                    existingEntry.promoCount++;
+                    this.silverSpotPromotions.set(existingEntry, this.contract);
+                } else {
+                    const firstEntry = new SilverSpotPromotions(collection, 1, promotionEnd);
+                    this.silverSpotPromotions.store(firstEntry, this.contract);
+                }
             }
-            const promotionEnd = <u32>SafeMath.add(currentTimePoint().secSinceEpoch(), promoDuration);
             sendLogColPromo(this.contract, collection, promotedBy, spotType, promotionEnd);
             // determine required auction duration for gold spot
             const goldSpotAuctionDuration = <u32>(

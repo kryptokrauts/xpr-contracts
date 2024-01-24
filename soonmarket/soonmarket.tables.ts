@@ -24,6 +24,22 @@ export class Globals extends Table {
     }
 }
 
+@table('silverpromos')
+export class SilverSpotPromotions extends Table {
+    constructor(
+        public collection: Name = new Name(),
+        public promoCount: u64 = 0,
+        public lastPromoEnd: u32 = 0,
+    ) {
+        super();
+    }
+
+    @primary
+    get primary(): u64 {
+        return this.collection.N;
+    }
+}
+
 @table('colblacklist')
 export class CollectionsBlacklist extends Table {
     constructor(
