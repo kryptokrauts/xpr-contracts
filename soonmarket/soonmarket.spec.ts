@@ -37,6 +37,7 @@ import {
     ONE_HOUR,
     ERROR_COLLECTION_ALREADY_PROMOTED,
     ONE_WEEK,
+    ONE_DAY,
 } from './soonmarket.constants.ts';
 import { Globals, SilverSpotPromotions } from './soonmarket.tables.ts';
 
@@ -305,15 +306,40 @@ describe('SoonMarket', () => {
                     eosio_assert(ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION),
                 );
             });
-            it('expect log actions to fail if called from other account', async () => {
+            it('expect actions to fail with missing authority', async () => {
+                const sender = `${marco.name}@active`;
                 await expectToThrow(
-                    soonmarket.actions.logauctpromo([1, marco.name, 'gold']).send('marco@active'),
+                    soonmarket.actions.setspots([1, 1]).send(sender),
+                    ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
+                );
+                await expectToThrow(
+                    soonmarket.actions.setpromodur([ONE_DAY, ONE_HOUR]).send(sender),
+                    ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
+                );
+                await expectToThrow(
+                    soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'fails anyway', []]).send(sender),
+                    ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
+                );
+                await expectToThrow(
+                    soonmarket.actions.delblacklist([COLLECTION_PIXELHEROES]).send(sender),
+                    ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
+                );
+                await expectToThrow(
+                    soonmarket.actions.addverified([COLLECTION_CYPHER_GANG, 'fails anyway', []]).send(sender),
+                    ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
+                );
+                await expectToThrow(
+                    soonmarket.actions.delverified([COLLECTION_CYPHER_GANG]).send(sender),
+                    ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
+                );
+                await expectToThrow(
+                    soonmarket.actions.logauctpromo([1, marco.name, 'gold']).send(sender),
                     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
                 );
                 await expectToThrow(
                     soonmarket.actions
                         .logcolpromo(['dogelover', marco.name, 'gold', Math.round(Date.now() / 1000)])
-                        .send('marco@active'),
+                        .send(sender),
                     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
                 );
             });
