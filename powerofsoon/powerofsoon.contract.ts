@@ -1,4 +1,15 @@
-import { Asset, Contract, Name, Singleton, TableStore, check, requireAuth, unpackActionData } from 'proton-tsc';
+import {
+    Asset,
+    Contract,
+    EMPTY_NAME,
+    Name,
+    Singleton,
+    TableStore,
+    check,
+    currentTimeSec,
+    requireAuth,
+    unpackActionData,
+} from 'proton-tsc';
 import { XPR_SYMBOL } from 'proton-tsc/system';
 import { Data, Feed, ORACLES_CONTRACT } from 'proton-tsc/oracles';
 import {
@@ -24,8 +35,14 @@ import {
     ERROR_XPRUSD_WRONG_FEED_NAME,
     ERROR_INVALID_MEMO,
     ERROR_SILVER_SPOT_EXPECTED,
+    ONE_DAY,
+    ERROR_INVALID_REAUCT_DURATION,
+    ERROR_AUCTION_NOT_EXISTS,
+    ERROR_AUCTION_STILL_RUNNING,
+    ERROR_INVALID_AUCTION_SELLER,
+    ERROR_AUCTION_HAS_BIDS,
 } from './powerofsoon.constants';
-import { Balances } from '../external/atomicmarket/atomicmarket.tables';
+import { Auctions, Balances } from '../external/atomicmarket/atomicmarket.tables';
 import { ATOMICMARKET_CONTRACT } from '../external/atomicmarket/atomicmarket.constants';
 import {
     sendAnnounceAuction,
@@ -50,10 +67,11 @@ class PowerOfSoon extends Contract {
     // soonmarket globals
     smGlobals: Singleton<SoonMarketGlobals> = new Singleton<SoonMarketGlobals>(SOONMARKET);
 
-    // atomicassets assets
+    // atomicassets tables
     aaAssets: TableStore<Assets> = new TableStore<Assets>(ATOMICASSETS_CONTRACT, this.receiver);
-    // atomicmarket balances table
+    // atomicmarket tables
     amBalances: TableStore<Balances> = new TableStore<Balances>(ATOMICMARKET_CONTRACT);
+    amAuctions: TableStore<Auctions> = new TableStore<Auctions>(ATOMICMARKET_CONTRACT);
     // oracles tables
     oraclesFeedTable: TableStore<Feed> = new TableStore<Feed>(ORACLES_CONTRACT);
     oraclesDataTable: TableStore<Data> = new TableStore<Data>(ORACLES_CONTRACT);
@@ -65,6 +83,15 @@ class PowerOfSoon extends Contract {
         const globals = this.globalsSingleton.get();
         globals.goldAuctStartPriceUsd = goldAuctStartingPriceUsd;
         globals.silverAuctStartPriceUsd = silverAuctStartingPriceUsd;
+        this.globalsSingleton.set(globals, this.contract);
+    }
+
+    @action('setreauctdur')
+    setReAuctionDuration(reAuctDuration: u32): void {
+        requireAuth(this.contract);
+        check(reAuctDuration > ONE_DAY, ERROR_INVALID_REAUCT_DURATION);
+        const globals = this.globalsSingleton.get();
+        globals.silverReAuctDuration = reAuctDuration;
         this.globalsSingleton.set(globals, this.contract);
     }
 
@@ -87,6 +114,10 @@ class PowerOfSoon extends Contract {
 
     @action('cancelauct') // can be called by anybody
     cancelAuction(auction_id: u64): void {
+        const auction = this.amAuctions.requireGet(auction_id, ERROR_AUCTION_NOT_EXISTS);
+        check(auction.end_time < currentTimeSec(), ERROR_AUCTION_STILL_RUNNING);
+        check(auction.seller == this.contract, ERROR_INVALID_AUCTION_SELLER);
+        check(auction.current_bidder == EMPTY_NAME, ERROR_AUCTION_HAS_BIDS);
         // incoming NFT transfer will automatically trigger a new auction in case of a silver spot
         sendCancelAuction(this.contract, auction_id);
     }
@@ -149,30 +180,42 @@ class PowerOfSoon extends Contract {
             // expecting an NFT transfer
             const actionParams = unpackActionData<TransferNfts>();
             // skip outgoing NFT transfers & all NFT transfers where soonmarket is not sender
-            if (actionParams.from == this.contract || actionParams.from != SOONMARKET) {
+            if (actionParams.from == this.contract) {
                 return;
             }
-            // only handle notifications from atomicassets contract where this contract is recipient & soonmarket is sender
+            // only handle notifications where this contract is recipient
             if (actionParams.to == this.contract) {
-                check(actionParams.asset_ids.length == 1, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED);
-                check(
-                    ACTION_BURN_MINT_AUCTION == actionParams.memo || actionParams.memo.startsWith(ACTION_AUCTION),
-                    ERROR_INVALID_ACTION,
-                );
-                const globals = this.globalsSingleton.get();
-                const xprUsdFeed = this.oraclesFeedTable.requireGet(
-                    globals.oraclesFeedIndexXprUsd,
-                    ERROR_XPRUSD_FEED_NOT_FOUND,
-                );
-                check(ORACLES_FEED_NAME_XPRUSD == xprUsdFeed.name, ERROR_XPRUSD_WRONG_FEED_NAME);
-                const xprUsdPrice = this.getAndCheckXprUsdPrice();
-                if (ACTION_BURN_MINT_AUCTION == actionParams.memo) {
-                    this.burnMintAuction(actionParams.asset_ids[0], xprUsdPrice);
-                } else {
-                    const memoSplit = actionParams.memo.split(' ');
-                    check(memoSplit.length == 2, ERROR_INVALID_MEMO);
-                    const duration: u32 = U32.parseInt(memoSplit[1]);
-                    this.auctionGoldSpot(actionParams.asset_ids[0], xprUsdPrice, duration);
+                // handle expected SPOT promotion
+                if (actionParams.from == SOONMARKET) {
+                    check(actionParams.asset_ids.length == 1, ERROR_ONLY_ONE_SPOT_NFT_ALLOWED);
+                    check(
+                        ACTION_BURN_MINT_AUCTION == actionParams.memo || actionParams.memo.startsWith(ACTION_AUCTION),
+                        ERROR_INVALID_ACTION,
+                    );
+                    const xprUsdPrice = this.getAndCheckXprUsdPrice();
+                    if (ACTION_BURN_MINT_AUCTION == actionParams.memo) {
+                        this.burnMintAuction(actionParams.asset_ids[0], xprUsdPrice);
+                    } else {
+                        const memoSplit = actionParams.memo.split(' ');
+                        check(memoSplit.length == 2, ERROR_INVALID_MEMO);
+                        const duration: u32 = U32.parseInt(memoSplit[1]);
+                        this.auctionGoldSpot(actionParams.asset_ids[0], xprUsdPrice, duration);
+                    }
+                } else if (actionParams.from == ATOMICMARKET_CONTRACT) {
+                    const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, this.contract).requireGet(
+                        // we are only handling this for 1 NFT and expect the first NFT to be a silver spot
+                        actionParams.asset_ids[0],
+                        'fatal error - should never happen',
+                    );
+                    // only re-auction in case of a silver spot, ignoring the rest
+                    if (asset.template_id == this.smGlobals.get().silverSpotTemplateId) {
+                        const xprUsdPrice = this.getAndCheckXprUsdPrice();
+                        this.startAuction(
+                            asset.asset_id,
+                            this.getSilverSpotStartingPrice(xprUsdPrice),
+                            this.globalsSingleton.get().silverReAuctDuration,
+                        );
+                    }
                 }
             }
         } else {
@@ -195,6 +238,12 @@ class PowerOfSoon extends Contract {
     }
 
     getAndCheckXprUsdPrice(): f64 {
+        const globals = this.globalsSingleton.get();
+        const xprUsdFeed = this.oraclesFeedTable.requireGet(
+            globals.oraclesFeedIndexXprUsd,
+            ERROR_XPRUSD_FEED_NOT_FOUND,
+        );
+        check(ORACLES_FEED_NAME_XPRUSD == xprUsdFeed.name, ERROR_XPRUSD_WRONG_FEED_NAME);
         const xprUsdData = this.oraclesDataTable.requireGet(ORACLES_FEED_INDEX_XPRUSD, ERROR_FEED_DATA_NOT_FOUND);
         const xprUsdPrice = xprUsdData.aggregate.f64Value;
         check(xprUsdPrice > 0, ERROR_AGGREGATED_PRICE_MUST_BE_POSITIVE);

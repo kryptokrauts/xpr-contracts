@@ -8,7 +8,7 @@ import {
     nameToBigInt,
     symbolCodeToBigInt,
 } from '@proton/vert';
-import { Asset, UInt64, Name, TimePointSec } from '@greymass/eosio';
+import { Asset, Name, TimePointSec } from '@greymass/eosio';
 import { Assets, Config } from 'proton-tsc/atomicassets';
 import {
     COLLECTION_CYPHER_GANG,
@@ -305,8 +305,15 @@ describe('PowerOfSoon', () => {
             expect(soonmarketBalance.balance).equal('0.0000 XPR');
             expect(soonfinanceBalance.balance).equal(`${bidAmount.toFixed(4)} XPR`);
         });
-        it('cancel auction', async () => {
-            // TODO
+        it('cancel auction with automated re-auctioning', async () => {
+            await mintAuctSpot(ONE_HOUR);
+            blockchain.addTime(TimePointSec.fromInteger(ONE_HOUR + 1));
+            const auction: Auction = atomicmarket.tables.auctions().getTableRow(bnToBigInt(1));
+            // marco is allowed to execute the action, anybody is
+            await powerofsoon.actions.cancelauct([auction.auction_id]).send(`${marco.name.toString()}@active`);
+            // expect a new auction running with default duration
+            const newAuction: Auction = atomicmarket.tables.auctions().getTableRow(bnToBigInt(2));
+            expect(newAuction.end_time).equal(blockchain.timestamp.toMilliseconds() / 1000 + ONE_WEEK);
         });
     });
 });
