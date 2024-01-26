@@ -1,4 +1,4 @@
-import { Name, Contract, TableStore, check, SafeMath, currentTimePoint, Singleton, unpackActionData } from 'proton-tsc';
+import { Name, Contract, TableStore, check, Singleton, unpackActionData, currentTimeSec } from 'proton-tsc';
 import { ATOMICASSETS_CONTRACT, Assets, Collections, TransferNfts, sendTransferNfts } from 'proton-tsc/atomicassets';
 
 import { ATOMICMARKET_CONTRACT } from '../external/atomicmarket/atomicmarket.constants';
@@ -101,12 +101,7 @@ class SoonMarket extends Contract {
         // update globals
         this.globalsSingleton.set(globals, this.contract);
 
-        const blacklistRow = new CollectionsBlacklist(
-            collection,
-            currentTimePoint().secSinceEpoch(),
-            comment,
-            references,
-        );
+        const blacklistRow = new CollectionsBlacklist(collection, currentTimeSec(), comment, references);
         this.collectionsBlacklist.store(blacklistRow, this.contract);
     }
 
@@ -131,12 +126,7 @@ class SoonMarket extends Contract {
         globals.verifiedCount++;
         this.globalsSingleton.set(globals, this.contract);
 
-        const verifiedRow = new CollectionsVerified(
-            collection,
-            currentTimePoint().secSinceEpoch(),
-            comment,
-            references,
-        );
+        const verifiedRow = new CollectionsVerified(collection, currentTimeSec(), comment, references);
         this.collectionsVerified.store(verifiedRow, this.contract);
     }
 
@@ -198,7 +188,7 @@ class SoonMarket extends Contract {
     checkAndGetExistingSilverPromotion(collection: Name): SilverSpotPromotions | null {
         const existingEntry = this.silverSpotPromotions.get(collection.N);
         if (existingEntry != null) {
-            check(existingEntry.lastPromoEnd < currentTimePoint().secSinceEpoch(), ERROR_COLLECTION_ALREADY_PROMOTED);
+            check(existingEntry.lastPromoEnd < currentTimeSec(), ERROR_COLLECTION_ALREADY_PROMOTED);
             return existingEntry;
         }
         return null;
@@ -227,25 +217,19 @@ class SoonMarket extends Contract {
     }
 
     validateCollection(collection: Name): void {
-        this.aaCollections.requireGet(collection.N, ERROR_COLLECTION_NOT_EXISTS);
+        check(this.aaCollections.exists(collection.N), ERROR_COLLECTION_NOT_EXISTS);
         this.checkIfVerified(collection);
     }
 
     validateAuction(auctionId: string): u32 {
         const auction = this.amAuctions.requireGet(<u64>parseInt(auctionId), ERROR_AUCTION_NOT_EXISTS);
-        const collection = this.aaCollections.requireGet(auction.collection_name.N, ERROR_COLLECTION_NOT_EXISTS);
-        this.checkIfVerified(collection.collection_name);
+        this.checkIfVerified(auction.collection_name);
         // only allow if assets are transferred / auction started
         check(auction.assets_transferred, ERROR_AUCTION_NOT_STARTED);
         // only allow if the expected end of the auction is 1 hour or more
-        check(
-            auction.end_time >= SafeMath.add(currentTimePoint().secSinceEpoch(), ONE_HOUR),
-            ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION,
-        );
+        check(auction.end_time >= currentTimeSec() + ONE_HOUR, ERROR_AUCTION_EXPIRED_OR_CLOSE_TO_EXPIRATION);
         // determine required auction duration for gold spot
-        const goldSpotAuctionDuration = <u32>(
-            SafeMath.add(SafeMath.sub(auction.end_time, currentTimePoint().secSinceEpoch()), ONE_DAY)
-        );
+        const goldSpotAuctionDuration = auction.end_time - currentTimeSec() + ONE_DAY;
         return goldSpotAuctionDuration;
     }
 
@@ -266,7 +250,7 @@ class SoonMarket extends Contract {
             const collection = Name.fromString(promoTargetId);
             this.validateCollection(collection);
             const promoDuration = spotType == SPOT_TYPE_GOLD ? globals.goldPromoDuration : globals.silverPromoDuration;
-            const promotionEnd = <u32>SafeMath.add(currentTimePoint().secSinceEpoch(), promoDuration);
+            const promotionEnd = currentTimeSec() + promoDuration;
             if (SPOT_TYPE_GOLD != spotType) {
                 this.checkValidSilverSpot(spotNftId);
                 let existingEntry = this.checkAndGetExistingSilverPromotion(collection);
@@ -281,9 +265,7 @@ class SoonMarket extends Contract {
             }
             sendLogColPromo(this.contract, collection, promotedBy, spotType, promotionEnd);
             // determine required auction duration for gold spot
-            const goldSpotAuctionDuration = <u32>(
-                SafeMath.add(SafeMath.sub(promotionEnd, currentTimePoint().secSinceEpoch()), ONE_DAY)
-            );
+            const goldSpotAuctionDuration = promotionEnd - currentTimeSec() + ONE_DAY;
             const memoAction =
                 spotType == SPOT_TYPE_GOLD ? `${ACTION_AUCTION} ${goldSpotAuctionDuration}` : ACTION_BURN_MINT_AUCTION;
             sendTransferNfts(this.contract, POWEROFSOON, [spotNftId], memoAction);
