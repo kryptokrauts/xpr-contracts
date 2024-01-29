@@ -25,7 +25,7 @@ export class Globals extends Table {
 }
 
 @table('silverpromos')
-export class SilverSpotPromotions extends Table {
+export class SilverSpotPromotion extends Table {
     constructor(
         public collection: Name = new Name(),
         public promoCount: u64 = 0,
@@ -45,7 +45,7 @@ export class CollectionsBlacklist extends Table {
     constructor(
         public collection: Name = new Name(),
         public timestamp: u32 = 0,
-        public comment: string = ''
+        public comment: string = '',
     ) {
         super();
     }
@@ -61,7 +61,7 @@ export class CollectionsVerified extends Table {
     constructor(
         public collection: Name = new Name(),
         public timestamp: u32 = 0,
-        public comment: string = ''
+        public comment: string = '',
     ) {
         super();
     }

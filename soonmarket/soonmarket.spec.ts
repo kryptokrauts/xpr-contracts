@@ -39,12 +39,13 @@ import {
     ONE_WEEK,
     ONE_DAY,
 } from './soonmarket.constants.ts';
-import { Globals, SilverSpotPromotions } from './soonmarket.tables.ts';
+import { Globals, SilverSpotPromotion } from './soonmarket.tables.ts';
 
 const blockchain = new Blockchain();
 
-// deploy contract to test
+// deploy contracts to test
 const soonmarket = blockchain.createContract('soonmarket', 'soonmarket/target/soonmarket.contract');
+const nftwatchdao = blockchain.createContract('nftwatchdao', 'nftwatchdao/target/nftwatchdao.contract');
 
 // deploy contracts required for testing
 const eosioToken = blockchain.createContract('eosio.token', 'node_modules/proton-tsc/external/eosio.token/eosio.token');
@@ -56,13 +57,14 @@ const xmdToken = blockchain.createContract('xmd.token', 'node_modules/proton-tsc
 const loanToken = blockchain.createContract('loan.token', 'node_modules/proton-tsc/external/xtokens/xtokens');
 
 // create accounts
-const [powerofsoon, soonfinance, protonpunk, pixelheroes, marco, mitch] = blockchain.createAccounts(
+const [powerofsoon, soonfinance, protonpunk, pixelheroes, marco, mitch, stonebreaker] = blockchain.createAccounts(
     'powerofsoon',
     'soonfinance',
     'protonpunk',
     'pixelheroes',
     'marco',
     'mitch',
+    'stonebreaker',
 );
 
 // helpers
@@ -125,9 +127,7 @@ before(async () => {
     // set correct spot ids for tests
     await soonmarket.actions.setspots([Number.parseInt(goldSpot.asset_id), silverSpots[0].template_id]).send();
     // add verified collection
-    await soonmarket.actions
-        .addverified([COLLECTION_CYPHER_GANG, 'testing cool shit here :-)'])
-        .send();
+    await soonmarket.actions.addverified([COLLECTION_CYPHER_GANG, 'testing cool shit here :-)']).send();
     // add blacklisted collection
     await soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'testing cool shit here :-)']).send();
     const globals = getGlobals();
@@ -237,7 +237,7 @@ describe('SoonMarket', () => {
                 blockchain.addTime(TimePointSec.fromInteger(ONE_WEEK + 1));
                 // allow again once promotion ended
                 await transferNfts(atomicassets, marco, soonmarket, [spotNft], `collection ${COLLECTION_CYPHER_GANG}`);
-                const promoEntry: SilverSpotPromotions = soonmarket.tables
+                const promoEntry: SilverSpotPromotion = soonmarket.tables
                     .silverpromos()
                     .getTableRow(nameToBigInt(COLLECTION_CYPHER_GANG));
                 expect(promoEntry.promoCount).equal(2);
@@ -368,6 +368,40 @@ describe('SoonMarket', () => {
                 expect(spotNft).not.undefined;
                 expect(getGlobals().silverPromoCount).equal(1);
             });
+            it('promotion of collection via silver spot for shielded collection', async () => {
+                // remove verified collection to check for shielding
+                await soonmarket.actions.delverified([COLLECTION_CYPHER_GANG]).send();
+                // fails now because collection isn't verified
+                await expectToThrow(
+                    transferNfts(
+                        atomicassets,
+                        marco,
+                        soonmarket,
+                        [silverSpots[0]],
+                        `collection ${COLLECTION_CYPHER_GANG}`,
+                    ),
+                    eosio_assert(ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED),
+                );
+                // add guard and add shielding
+                await nftwatchdao.actions.addguard([stonebreaker.name]).send();
+                await nftwatchdao.actions
+                    .addshielding([COLLECTION_CYPHER_GANG, stonebreaker.name, 'for testing', 'Qm...'])
+                    .send(`${stonebreaker.name}@active`);
+                // promote by transferring Spot NFT with valid memo to soonmarket
+                await transferNfts(
+                    atomicassets,
+                    marco,
+                    soonmarket,
+                    [silverSpots[0]],
+                    `collection ${COLLECTION_CYPHER_GANG}`,
+                );
+                // powerofsoon is new owner
+                let spotNft = atomicassets.tables
+                    .assets(nameToBigInt(powerofsoon.name))
+                    .getTableRow(silverSpots[0].asset_id);
+                expect(spotNft).not.undefined;
+                expect(getGlobals().silverPromoCount).equal(1);
+            });
             it('promotion of NFT auction via gold spot', async () => {
                 // marco is owner, powerofsoon not
                 let spotNft = atomicassets.tables.assets(nameToBigInt(marco.name)).getTableRow(goldSpot.asset_id);
@@ -437,9 +471,7 @@ describe('SoonMarket', () => {
         });
         it('reject if collection already verified', async () => {
             await expectToThrow(
-                soonmarket.actions
-                    .addverified([COLLECTION_CYPHER_GANG, 'reverts anyway, already verified ...'])
-                    .send(),
+                soonmarket.actions.addverified([COLLECTION_CYPHER_GANG, 'reverts anyway, already verified ...']).send(),
                 eosio_assert(ERROR_COLLECTION_ALREADY_VERIFIED),
             );
         });

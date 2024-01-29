@@ -1,4 +1,14 @@
-import { Name, Contract, TableStore, check, Singleton, unpackActionData, currentTimeSec } from 'proton-tsc';
+import {
+    Name,
+    Contract,
+    TableStore,
+    check,
+    Singleton,
+    unpackActionData,
+    currentTimeSec,
+    requireAuth,
+} from 'proton-tsc';
+import { Transfer, sendTransferToken } from 'proton-tsc/token';
 import { ATOMICASSETS_CONTRACT, Assets, Collections, TransferNfts, sendTransferNfts } from 'proton-tsc/atomicassets';
 
 import { ATOMICMARKET_CONTRACT } from '../external/atomicmarket/atomicmarket.constants';
@@ -31,12 +41,12 @@ import {
     ACTION_BURN_MINT_AUCTION,
     ERROR_COLLECTION_ALREADY_PROMOTED,
 } from './soonmarket.constants';
-import { requireAuth } from 'as-chain';
 import { sendLogAuctPromo, sendLogColPromo } from './soonmarket.inline';
-import { CollectionsBlacklist, CollectionsVerified, Globals, SilverSpotPromotions } from './soonmarket.tables';
-import { Transfer, sendTransferToken } from 'proton-tsc/token';
+import { CollectionsBlacklist, CollectionsVerified, Globals, SilverSpotPromotion } from './soonmarket.tables';
+import { Blacklist, Shielding } from '../nftwatchdao/nftwatchdao.tables';
 
 const POWEROFSOON = Name.fromString('powerofsoon');
+const NFTWATCHDAO = Name.fromString('nftwatchdao');
 
 @contract
 class SoonMarket extends Contract {
@@ -46,9 +56,13 @@ class SoonMarket extends Contract {
     globalsSingleton: Singleton<Globals> = new Singleton<Globals>(this.receiver);
 
     // soonmarket tables
-    silverSpotPromotions: TableStore<SilverSpotPromotions> = new TableStore<SilverSpotPromotions>(this.receiver);
+    silverSpotPromotions: TableStore<SilverSpotPromotion> = new TableStore<SilverSpotPromotion>(this.receiver);
     collectionsBlacklist: TableStore<CollectionsBlacklist> = new TableStore<CollectionsBlacklist>(this.receiver);
     collectionsVerified: TableStore<CollectionsVerified> = new TableStore<CollectionsVerified>(this.receiver);
+
+    // nftwatchdao tables
+    nftwatchShielded: TableStore<Shielding> = new TableStore<Shielding>(NFTWATCHDAO);
+    nftwatchBlacklist: TableStore<Blacklist> = new TableStore<Blacklist>(NFTWATCHDAO);
 
     // atomicassets tables
     aaAssets: TableStore<Assets> = new TableStore<Assets>(ATOMICASSETS_CONTRACT, this.receiver);
@@ -185,7 +199,7 @@ class SoonMarket extends Contract {
         requireAuth(this.contract);
     }
 
-    checkAndGetExistingSilverPromotion(collection: Name): SilverSpotPromotions | null {
+    checkAndGetExistingSilverPromotion(collection: Name): SilverSpotPromotion | null {
         const existingEntry = this.silverSpotPromotions.get(collection.N);
         if (existingEntry != null) {
             check(existingEntry.lastPromoEnd < currentTimeSec(), ERROR_COLLECTION_ALREADY_PROMOTED);
@@ -209,11 +223,11 @@ class SoonMarket extends Contract {
 
     checkIfVerified(collection: Name): void {
         const blacklistRow = this.collectionsBlacklist.get(collection.N);
-        check(blacklistRow == null, ERROR_COLLECTION_BLACKLISTED);
+        const nftwatchBlacklistRow = this.nftwatchBlacklist.get(collection.N);
+        check(blacklistRow == null && nftwatchBlacklistRow == null, ERROR_COLLECTION_BLACKLISTED);
         const verifiedRow = this.collectionsVerified.get(collection.N);
-        // TODO real NFT Watch check
-        const shielded = false;
-        check(verifiedRow != null || shielded, ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED);
+        const shieldedRow = this.nftwatchShielded.get(collection.N);
+        check(verifiedRow != null || shieldedRow != null, ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED);
     }
 
     validateCollection(collection: Name): void {
@@ -259,7 +273,7 @@ class SoonMarket extends Contract {
                     existingEntry.promoCount++;
                     this.silverSpotPromotions.set(existingEntry, this.contract);
                 } else {
-                    const firstEntry = new SilverSpotPromotions(collection, 1, promotionEnd);
+                    const firstEntry = new SilverSpotPromotion(collection, 1, promotionEnd);
                     this.silverSpotPromotions.store(firstEntry, this.contract);
                 }
             }
