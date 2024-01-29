@@ -128,10 +128,10 @@ before(async () => {
     await soonmarket.actions.setspots([Number.parseInt(goldSpot.asset_id), silverSpots[0].template_id]).send();
     // add verified collection
     await soonmarket.actions
-        .addverified([COLLECTION_CYPHER_GANG, 'testing cool shit here :-)', ['https://cyphergang.com']])
+        .addverified([COLLECTION_CYPHER_GANG, 'testing cool shit here :-)'])
         .send();
     // add blacklisted collection
-    await soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'testing cool shit here :-)', []]).send();
+    await soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'testing cool shit here :-)']).send();
     const soonmarketGlobals = getSoonMarketGlobals();
     expect(soonmarketGlobals.goldSpotId).equal(goldSpot.asset_id);
     expect(soonmarketGlobals.silverSpotTemplateId).equal(silverSpots[0].template_id);

@@ -45,8 +45,7 @@ export class CollectionsBlacklist extends Table {
     constructor(
         public collection: Name = new Name(),
         public timestamp: u32 = 0,
-        public comment: string = '',
-        public references: Array<string> = [],
+        public comment: string = ''
     ) {
         super();
     }
@@ -62,8 +61,7 @@ export class CollectionsVerified extends Table {
     constructor(
         public collection: Name = new Name(),
         public timestamp: u32 = 0,
-        public comment: string = '',
-        public references: Array<string> = [],
+        public comment: string = ''
     ) {
         super();
     }

@@ -86,7 +86,7 @@ class SoonMarket extends Contract {
     }
 
     @action('addblacklist')
-    addToBlacklist(collection: Name, comment: string, references: Array<string>): void {
+    addToBlacklist(collection: Name, comment: string): void {
         requireAuth(this.contract);
         check(this.collectionsBlacklist.get(collection.N) == null, ERROR_COLLECTION_ALREADY_BLACKLISTED);
 
@@ -101,7 +101,7 @@ class SoonMarket extends Contract {
         // update globals
         this.globalsSingleton.set(globals, this.contract);
 
-        const blacklistRow = new CollectionsBlacklist(collection, currentTimeSec(), comment, references);
+        const blacklistRow = new CollectionsBlacklist(collection, currentTimeSec(), comment);
         this.collectionsBlacklist.store(blacklistRow, this.contract);
     }
 
@@ -118,7 +118,7 @@ class SoonMarket extends Contract {
     }
 
     @action('addverified')
-    addToVerified(collection: Name, comment: string, references: Array<string>): void {
+    addToVerified(collection: Name, comment: string): void {
         requireAuth(this.contract);
         check(this.collectionsVerified.get(collection.N) == null, ERROR_COLLECTION_ALREADY_VERIFIED);
 
@@ -126,7 +126,7 @@ class SoonMarket extends Contract {
         globals.verifiedCount++;
         this.globalsSingleton.set(globals, this.contract);
 
-        const verifiedRow = new CollectionsVerified(collection, currentTimeSec(), comment, references);
+        const verifiedRow = new CollectionsVerified(collection, currentTimeSec(), comment);
         this.collectionsVerified.store(verifiedRow, this.contract);
     }
 

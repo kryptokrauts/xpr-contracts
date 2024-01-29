@@ -126,10 +126,10 @@ before(async () => {
     await soonmarket.actions.setspots([Number.parseInt(goldSpot.asset_id), silverSpots[0].template_id]).send();
     // add verified collection
     await soonmarket.actions
-        .addverified([COLLECTION_CYPHER_GANG, 'testing cool shit here :-)', ['https://cyphergang.com']])
+        .addverified([COLLECTION_CYPHER_GANG, 'testing cool shit here :-)'])
         .send();
     // add blacklisted collection
-    await soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'testing cool shit here :-)', []]).send();
+    await soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'testing cool shit here :-)']).send();
     const globals = getGlobals();
     expect(globals.goldSpotId).equal(goldSpot.asset_id);
     expect(globals.silverSpotTemplateId).equal(silverSpots[0].template_id);
@@ -317,7 +317,7 @@ describe('SoonMarket', () => {
                     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
                 );
                 await expectToThrow(
-                    soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'fails anyway', []]).send(sender),
+                    soonmarket.actions.addblacklist([COLLECTION_PIXELHEROES, 'fails anyway']).send(sender),
                     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
                 );
                 await expectToThrow(
@@ -325,7 +325,7 @@ describe('SoonMarket', () => {
                     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
                 );
                 await expectToThrow(
-                    soonmarket.actions.addverified([COLLECTION_CYPHER_GANG, 'fails anyway', []]).send(sender),
+                    soonmarket.actions.addverified([COLLECTION_CYPHER_GANG, 'fails anyway']).send(sender),
                     ERROR_MISSING_REQUIRED_AUTHORITY_SOONMARKET,
                 );
                 await expectToThrow(
@@ -422,7 +422,7 @@ describe('SoonMarket', () => {
         it('reject if collection already blacklisted', async () => {
             await expectToThrow(
                 soonmarket.actions
-                    .addblacklist([COLLECTION_PIXELHEROES, 'reverts anyway, already blacklisted ...', []])
+                    .addblacklist([COLLECTION_PIXELHEROES, 'reverts anyway, already blacklisted ...'])
                     .send(),
                 eosio_assert(ERROR_COLLECTION_ALREADY_BLACKLISTED),
             );
@@ -438,7 +438,7 @@ describe('SoonMarket', () => {
         it('reject if collection already verified', async () => {
             await expectToThrow(
                 soonmarket.actions
-                    .addverified([COLLECTION_CYPHER_GANG, 'reverts anyway, already verified ...', []])
+                    .addverified([COLLECTION_CYPHER_GANG, 'reverts anyway, already verified ...'])
                     .send(),
                 eosio_assert(ERROR_COLLECTION_ALREADY_VERIFIED),
             );
