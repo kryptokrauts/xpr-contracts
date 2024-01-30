@@ -102,6 +102,7 @@ class SoonMarket extends Contract {
     @action('addblacklist')
     addToBlacklist(collection: Name, comment: string): void {
         requireAuth(this.contract);
+        check(this.aaCollections.exists(collection.N), ERROR_COLLECTION_NOT_EXISTS);
         check(this.collectionsBlacklist.get(collection.N) == null, ERROR_COLLECTION_ALREADY_BLACKLISTED);
 
         const globals = this.globalsSingleton.get();
@@ -134,6 +135,7 @@ class SoonMarket extends Contract {
     @action('addverified')
     addToVerified(collection: Name, comment: string): void {
         requireAuth(this.contract);
+        check(this.aaCollections.exists(collection.N), ERROR_COLLECTION_NOT_EXISTS);
         check(this.collectionsVerified.get(collection.N) == null, ERROR_COLLECTION_ALREADY_VERIFIED);
 
         const globals = this.globalsSingleton.get();

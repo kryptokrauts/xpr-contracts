@@ -447,6 +447,12 @@ describe('SoonMarket', () => {
         });
     });
     describe('blacklist handling', () => {
+        it('reject to add non existing collection', async () => {
+            await expectToThrow(
+                soonmarket.actions.addblacklist(['notexists', 'reverts anyway, ...']).send(),
+                eosio_assert(ERROR_COLLECTION_NOT_EXISTS),
+            );
+        });
         it('reject trying to remove non-blacklisted collection', async () => {
             await expectToThrow(
                 soonmarket.actions.delblacklist([COLLECTION_CYPHER_GANG]).send(),
@@ -463,6 +469,12 @@ describe('SoonMarket', () => {
         });
     });
     describe('verified handling', () => {
+        it('reject to add non existing collection', async () => {
+            await expectToThrow(
+                soonmarket.actions.addverified(['notexists', 'reverts anyway, ...']).send(),
+                eosio_assert(ERROR_COLLECTION_NOT_EXISTS),
+            );
+        });
         it('reject trying to remove verified collection', async () => {
             await expectToThrow(
                 soonmarket.actions.delverified([COLLECTION_PIXELHEROES]).send(),
