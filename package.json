@@ -14,7 +14,8 @@
         "test:powerofsoon": "mocha -s 250 ./powerofsoon/*.spec.ts -r ts-node/register --timeout 10000",
         "test:nftwatchdao": "mocha -s 250 ./nftwatchdao/*.spec.ts -r ts-node/register --timeout 10000",
         "format": "prettier -w .",
-        "format:check": "prettier -c ."
+        "format:check": "prettier -c .",
+        "clean": "rm -rf ./**/target"
     },
     "devDependencies": {
         "@proton/vert": "0.3.24",

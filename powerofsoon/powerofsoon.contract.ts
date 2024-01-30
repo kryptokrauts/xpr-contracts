@@ -11,6 +11,7 @@ import {
     unpackActionData,
 } from 'proton-tsc';
 import { XPR_SYMBOL } from 'proton-tsc/system';
+import { Transfer, sendTransferToken } from 'proton-tsc/token';
 import { Data, Feed, ORACLES_CONTRACT } from 'proton-tsc/oracles';
 import {
     ATOMICASSETS_CONTRACT,
@@ -50,10 +51,9 @@ import {
     sendCancelAuction,
     sendWithdraw,
 } from '../external/atomicmarket/atomicmarket.inline';
+import { Globals as SoonMarketGlobals } from '../external/soonmarket/soonmarket.tables';
 import { Globals } from './powerofsoon.tables';
-import { Globals as SoonMarketGlobals } from '../soonmarket/soonmarket.tables';
 import { sendAuctionLatestSilverSpot, sendClaimMarketBalance } from './powerofsoon.inline';
-import { Transfer, sendTransferToken } from 'proton-tsc/token';
 
 const SOONMARKET = Name.fromString('soonmarket');
 

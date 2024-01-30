@@ -14,6 +14,7 @@ import { ATOMICASSETS_CONTRACT, Assets, Collections, TransferNfts, sendTransferN
 import { ATOMICMARKET_CONTRACT } from '../external/atomicmarket/atomicmarket.constants';
 import { Auctions, Balances } from '../external/atomicmarket/atomicmarket.tables';
 import { sendWithdraw } from '../external/atomicmarket/atomicmarket.inline';
+import { Blacklist, Shielding } from '../external/nftwatchdao/nftwatchdao.tables';
 import {
     ERROR_AUCTION_NOT_EXISTS,
     ERROR_COLLECTION_NOT_EXISTS,
@@ -43,7 +44,6 @@ import {
 } from './soonmarket.constants';
 import { sendLogAuctPromo, sendLogColPromo } from './soonmarket.inline';
 import { CollectionsBlacklist, CollectionsVerified, Globals, SilverSpotPromotion } from './soonmarket.tables';
-import { Blacklist, Shielding } from '../nftwatchdao/nftwatchdao.tables';
 
 const POWEROFSOON = Name.fromString('powerofsoon');
 const NFTWATCHDAO = Name.fromString('nftwatchdao');
