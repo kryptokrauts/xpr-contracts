@@ -73,9 +73,9 @@ class NftWatchDao extends Contract {
     }
 
     @action('setfeestruct')
-    setFeeDistribution(guard: f32, dao: f32, market: f32): void {
+    setFeeDistribution(guard: u8, dao: u8, market: u8): void {
         requireAuth(this.contract);
-        check(guard + dao + market == 1.0, ERROR_INVALID_FEE_STRUCTURE);
+        check(guard + dao + market == 100, ERROR_INVALID_FEE_STRUCTURE);
         const globals = this.globalsSingleton.get();
         globals.shieldingGuardFee = guard;
         globals.shieldingDaoFee = dao;
@@ -230,7 +230,7 @@ class NftWatchDao extends Contract {
         requesterBalance.xpr = Asset.sub(requesterBalance.xpr, globals.shieldingPrice);
         this.balances.set(requesterBalance, requester);
         // forward shielding fee to market
-        const marketFeeAmount = <u64>(<f64>globals.shieldingPrice.amount * globals.shieldingMarketFee);
+        const marketFeeAmount = (globals.shieldingPrice.amount * globals.shieldingMarketFee) / 100;
         sendTransferToken(
             Name.fromString(XPR_TOKEN_CONTRACT),
             this.contract,
@@ -371,7 +371,7 @@ class NftWatchDao extends Contract {
     handleShieldingReview(request: ShieldingRequest, guard: Name, reportCid: string): void {
         check(reportCid.startsWith('Qm') || reportCid.startsWith('bafy'), ERROR_INVALID_CID);
         const globals = this.globalsSingleton.get();
-        const guardFeeAmount = <u64>(<f64>request.requestPrice.amount * globals.shieldingGuardFee);
+        const guardFeeAmount = (request.requestPrice.amount * globals.shieldingGuardFee) / 100;
         sendTransferToken(
             Name.fromString(XPR_TOKEN_CONTRACT),
             this.contract,

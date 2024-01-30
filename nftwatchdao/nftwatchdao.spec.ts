@@ -159,8 +159,8 @@ describe('NftWatchDAO', () => {
             let marketAcc = getAccountXprBalance(soonmarket);
             let daoAcc = getAccountXprBalance(nftwatchdao);
             expect(guardAcc).undefined;
-            expect(marketAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.1, '4,XPR').toString());
-            expect(daoAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.9, '4,XPR').toString());
+            expect(marketAcc.balance).equal(Asset.from((SHIELDING_PRICE * 10) / 100, '4,XPR').toString());
+            expect(daoAcc.balance).equal(Asset.from((SHIELDING_PRICE * 90) / 100, '4,XPR').toString());
             await nftwatchdao.actions
                 .rejectshield([COLLECTION_CYPHER_GANG, stonebreaker.name, 'Qm...'])
                 .send(`${stonebreaker.name}@active`);
@@ -173,9 +173,9 @@ describe('NftWatchDAO', () => {
             guardAcc = getAccountXprBalance(stonebreaker);
             marketAcc = getAccountXprBalance(soonmarket);
             daoAcc = getAccountXprBalance(nftwatchdao);
-            expect(guardAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.5, '4,XPR').toString());
-            expect(marketAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.1, '4,XPR').toString());
-            expect(daoAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.4, '4,XPR').toString());
+            expect(guardAcc.balance).equal(Asset.from((SHIELDING_PRICE * 50) / 100, '4,XPR').toString());
+            expect(marketAcc.balance).equal(Asset.from((SHIELDING_PRICE * 10) / 100, '4,XPR').toString());
+            expect(daoAcc.balance).equal(Asset.from((SHIELDING_PRICE * 40) / 100, '4,XPR').toString());
         });
         it('confirm & delete shielding', async () => {
             const SHIELDING_PRICE = 12500;
@@ -199,8 +199,8 @@ describe('NftWatchDAO', () => {
             let marketAcc = getAccountXprBalance(soonmarket);
             let daoAcc = getAccountXprBalance(nftwatchdao);
             expect(guardAcc).undefined;
-            expect(marketAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.1, '4,XPR').toString());
-            expect(daoAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.9, '4,XPR').toString());
+            expect(marketAcc.balance).equal(Asset.from((SHIELDING_PRICE * 10) / 100, '4,XPR').toString());
+            expect(daoAcc.balance).equal(Asset.from((SHIELDING_PRICE * 90) / 100, '4,XPR').toString());
             await nftwatchdao.actions
                 .confshield([COLLECTION_CYPHER_GANG, stonebreaker.name, 'bafy...'])
                 .send(`${stonebreaker.name}@active`);
@@ -218,9 +218,9 @@ describe('NftWatchDAO', () => {
             guardAcc = getAccountXprBalance(stonebreaker);
             marketAcc = getAccountXprBalance(soonmarket);
             daoAcc = getAccountXprBalance(nftwatchdao);
-            expect(guardAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.5, '4,XPR').toString());
-            expect(marketAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.1, '4,XPR').toString());
-            expect(daoAcc.balance).equal(Asset.fromFloat(SHIELDING_PRICE * 0.4, '4,XPR').toString());
+            expect(guardAcc.balance).equal(Asset.from((SHIELDING_PRICE * 50) / 100, '4,XPR').toString());
+            expect(marketAcc.balance).equal(Asset.from((SHIELDING_PRICE * 10) / 100, '4,XPR').toString());
+            expect(daoAcc.balance).equal(Asset.from((SHIELDING_PRICE * 40) / 100, '4,XPR').toString());
             // delete shielding
             await nftwatchdao.actions
                 .delshielding([
@@ -268,12 +268,12 @@ describe('NftWatchDAO', () => {
         it('set invalid fee structure', async () => {
             // too low
             await expectToThrow(
-                nftwatchdao.actions.setfeestruct([0.2, 0.2, 0.59]).send(`${nftwatchdao.name}@active`),
+                nftwatchdao.actions.setfeestruct([20, 20, 59]).send(`${nftwatchdao.name}@active`),
                 eosio_assert(ERROR_INVALID_FEE_STRUCTURE),
             );
             // too high
             await expectToThrow(
-                nftwatchdao.actions.setfeestruct([0.2, 0.2, 0.61]).send(`${nftwatchdao.name}@active`),
+                nftwatchdao.actions.setfeestruct([20, 20, 61]).send(`${nftwatchdao.name}@active`),
                 eosio_assert(ERROR_INVALID_FEE_STRUCTURE),
             );
         });

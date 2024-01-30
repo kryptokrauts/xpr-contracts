@@ -6,9 +6,9 @@ import { XPR_SYMBOL } from 'proton-tsc/system';
 export class Globals extends Table {
     constructor(
         public shieldingPrice: Asset = Asset.fromString(SHIELDING_PRICE_XPR),
-        public shieldingGuardFee: f32 = 0.5,
-        public shieldingDaoFee: f32 = 0.4,
-        public shieldingMarketFee: f32 = 0.1,
+        public shieldingGuardFee: u8 = 50,
+        public shieldingDaoFee: u8 = 40,
+        public shieldingMarketFee: u8 = 10,
         public blacklistCount: u64 = 0,
         public shieldCount: u64 = 0,
         public authorizedGuards: Array<Name> = [],
