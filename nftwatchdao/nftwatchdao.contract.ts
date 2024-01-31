@@ -388,6 +388,6 @@ class NftWatchDao extends Contract {
             account = new Balance(actor);
         }
         account.xpr = Asset.add(account.xpr, xpr);
-        this.balances.set(account, actor);
+        this.balances.set(account, this.contract);
     }
 }
