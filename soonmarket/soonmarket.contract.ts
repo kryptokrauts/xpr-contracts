@@ -177,8 +177,11 @@ class SoonMarket extends Contract {
         } else {
             // otherwise we expect a regular token transfer
             const actionParams = unpackActionData<Transfer>();
-            // skip outgoing transfers & transfers from other accounts than atomicmarket
-            if (actionParams.from == this.contract || ATOMICMARKET_CONTRACT != actionParams.from) {
+            // skip outgoing transfers & transfers from other accounts than atomicmarket & nftwatchdao
+            if (
+                actionParams.from == this.contract ||
+                (ATOMICMARKET_CONTRACT != actionParams.from && NFTWATCHDAO != actionParams.from)
+            ) {
                 return;
             }
             sendTransferToken(
@@ -186,7 +189,7 @@ class SoonMarket extends Contract {
                 this.contract,
                 Name.fromString('soonfinance'),
                 actionParams.quantity,
-                'marketplace revenue',
+                NFTWATCHDAO == actionParams.from ? actionParams.memo : 'marketplace revenue',
             );
         }
     }

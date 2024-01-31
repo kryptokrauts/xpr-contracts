@@ -293,12 +293,12 @@ describe('PowerOfSoon', () => {
             soonfinanceBalance = getAccountBalance(eosioToken, 'soonfinance', 'XPR');
             // balance now initialized, but zero because it's forwarded
             expect(powerofsoonBalance.balance).equal('0.0000 XPR');
-            const floatBid = Number.parseFloat(auction.current_bid.split(' ')[0].replace('.', ''));
+            const bid = Number.parseInt(auction.current_bid.split(' ')[0].replace('.', ''));
             const xprAssetSymbol = Asset.Symbol.from('4,XPR');
-            const powerofsoonIncome = Asset.fromFloat(((floatBid / 100) * 98) / 10000, xprAssetSymbol);
+            const powerofsoonIncome = Asset.from(((bid / 100) * 98) / 10000, xprAssetSymbol);
             expect(soonfinanceBalance.balance).equal(powerofsoonIncome.toString());
             // remains on atomicmarket for now
-            const soonmarketIncome = Asset.fromFloat(((floatBid / 100) * 2) / 10000, xprAssetSymbol);
+            const soonmarketIncome = Asset.from(((bid / 100) * 2) / 10000, xprAssetSymbol);
             expect(atomicmarketBalance.balance).equal(soonmarketIncome.toString());
             // still undefined because unclaimed
             expect(soonmarketBalance).undefined;

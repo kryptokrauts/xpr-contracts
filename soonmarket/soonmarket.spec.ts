@@ -16,6 +16,7 @@ import {
     TOKEN_XPR,
     TOKEN_XUSDC,
     eosio_assert,
+    getTokenAmountActionParam,
 } from '../helpers/common.ts';
 import {
     ERROR_AUCTION_NOT_EXISTS,
@@ -73,7 +74,7 @@ const initContracts = async (...contracts: Array<Account>): Promise<void> => {
         await contract.actions.init().send();
     }
 };
-const getAccountBalance = (contract: Account, accountName: string, symbol: string) => {
+const getAccount = (contract: Account, accountName: string, symbol: string) => {
     const accountBigInt = nameToBigInt(Name.from(accountName));
     const symcodeBigInt = symbolCodeToBigInt(Asset.SymbolCode.from(symbol));
     return contract.tables.accounts(accountBigInt).getTableRow(symcodeBigInt);
@@ -494,11 +495,11 @@ describe('SoonMarket', () => {
             await eosioToken.actions
                 .transfer(['marco', 'soonmarket', `${amount}`, `no forwarding`])
                 .send('marco@active');
-            const marco = getAccountBalance(eosioToken, 'marco', 'XPR');
+            const marco = getAccount(eosioToken, 'marco', 'XPR');
             expect('9998663.0000 XPR').equal(marco.balance);
-            const soonmarketAcc = getAccountBalance(eosioToken, 'soonmarket', 'XPR');
+            const soonmarketAcc = getAccount(eosioToken, 'soonmarket', 'XPR');
             expect('10001337.0000 XPR').equal(soonmarketAcc.balance);
-            const soonfinanceAcc = getAccountBalance(eosioToken, 'soonfinance', 'XPR');
+            const soonfinanceAcc = getAccount(eosioToken, 'soonfinance', 'XPR');
             expect(soonfinanceAcc).undefined;
         });
         it('forward token transfer from atomicmarket', async () => {
@@ -507,17 +508,40 @@ describe('SoonMarket', () => {
             await eosioToken.actions
                 .transfer(['soonmarket', 'atomicmarket', `${amount}`, `deposit`])
                 .send('soonmarket@active');
-            let soonmarketAcc = getAccountBalance(eosioToken, 'soonmarket', 'XPR');
+            let soonmarketAcc = getAccount(eosioToken, 'soonmarket', 'XPR');
             expect('9998663.0000 XPR').equal(soonmarketAcc.balance);
-            let atomicmarketAcc = getAccountBalance(eosioToken, 'atomicmarket', 'XPR');
+            let atomicmarketAcc = getAccount(eosioToken, 'atomicmarket', 'XPR');
             expect(amount).equal(atomicmarketAcc.balance);
             await atomicmarket.actions.withdraw(['soonmarket', amount]).send('soonmarket@active');
-            soonmarketAcc = getAccountBalance(eosioToken, 'soonmarket', 'XPR');
+            soonmarketAcc = getAccount(eosioToken, 'soonmarket', 'XPR');
             expect('9998663.0000 XPR').equal(soonmarketAcc.balance);
-            atomicmarketAcc = getAccountBalance(eosioToken, 'atomicmarket', 'XPR');
+            atomicmarketAcc = getAccount(eosioToken, 'atomicmarket', 'XPR');
             expect('0.0000 XPR').equal(atomicmarketAcc.balance);
-            const soonfinanceAcc = getAccountBalance(eosioToken, 'soonfinance', 'XPR');
+            const soonfinanceAcc = getAccount(eosioToken, 'soonfinance', 'XPR');
             expect(amount).equal(soonfinanceAcc.balance);
+        });
+        it('forward shielding fee from nftwatchdao', async () => {
+            let nftwatchdaoAcc = getAccount(eosioToken, 'nftwatchdao', 'XPR');
+            let soonfinanceAcc = getAccount(eosioToken, 'soonfinance', 'XPR');
+            expect(nftwatchdaoAcc).undefined;
+            expect(soonfinanceAcc).undefined;
+            const SHIELDING_PRICE = 12500;
+            await eosioToken.actions
+                .transfer([
+                    marco.name,
+                    nftwatchdao.name,
+                    getTokenAmountActionParam(SHIELDING_PRICE, TOKEN_XPR),
+                    'shielding',
+                ])
+                .send(`${marco.name}@active`);
+            await nftwatchdao.actions
+                .reqshielding([COLLECTION_CYPHER_GANG, marco.name, soonmarket.name, false, ''])
+                .send(`${marco.name}@active`);
+            nftwatchdaoAcc = getAccount(eosioToken, 'nftwatchdao', 'XPR');
+            soonfinanceAcc = getAccount(eosioToken, 'soonfinance', 'XPR');
+            expect(nftwatchdaoAcc.balance).equal(Asset.from((SHIELDING_PRICE * 90) / 100, '4,XPR').toString());
+            // 10% fee is sent to soonmarket but will automatically be forwarded to soonfinance
+            expect(soonfinanceAcc.balance).equal(Asset.from((SHIELDING_PRICE * 10) / 100, '4,XPR').toString());
         });
     });
 });
