@@ -148,6 +148,7 @@ class NftWatchDao extends Contract {
     @action('addblacklist')
     addToBlacklist(collection: Name, guard: Name, comment: string): void {
         requireAuth(guard);
+        check(this.aaCollections.exists(collection.N), ERROR_COLLECTION_NOT_EXISTS);
         const globals = this.globalsSingleton.get();
         check(globals.authorizedGuards.includes(guard), ERROR_UNAUTHORIZED_GUARD);
         const blacklistEntry = new Blacklist(collection, '', EMPTY_NAME, guard, comment, currentTimeSec());
