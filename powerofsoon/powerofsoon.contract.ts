@@ -76,6 +76,12 @@ class PowerOfSoon extends Contract {
     oraclesFeedTable: TableStore<Feed> = new TableStore<Feed>(ORACLES_CONTRACT);
     oraclesDataTable: TableStore<Data> = new TableStore<Data>(ORACLES_CONTRACT);
 
+    /**
+     * Configures the auction start price in USD.
+     * @param {u32} goldAuctStartingPriceUsd - start price (USD) for gold spot auctions
+     * @param {u32} silverAuctStartingPriceUsd - start price (USD) for silver spot auctions
+     * @throws if authorization of contract is missing
+     */
     @action('setstartpric')
     setStartPrices(goldAuctStartingPriceUsd: u32, silverAuctStartingPriceUsd: u32): void {
         requireAuth(this.contract);
@@ -86,6 +92,12 @@ class PowerOfSoon extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
+    /**
+     * Configures the duration for re-auctioning of soon spot silver nfts
+     * @param {u32} reAuctDuration - duration (in seconds) for re-auctioning
+     * @throws if authorization of contract is missing
+     * @throws if duration is too low (< 1 day)
+     */
     @action('setreauctdur')
     setReAuctionDuration(reAuctDuration: u32): void {
         requireAuth(this.contract);
@@ -95,7 +107,10 @@ class PowerOfSoon extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
-    @action('clmktbalance') // can be called by anybody
+    /**
+     * Claims balance from atomicmarket contract.
+     */
+    @action('clmktbalance')
     claimMarketBalance(): void {
         const balancesRow = this.amBalances.requireGet(this.contract.N, ERROR_MARKET_BALANCE_NOT_FOUND);
         for (let i = 0; i < balancesRow.quantities.length; i++) {
@@ -104,6 +119,10 @@ class PowerOfSoon extends Contract {
         }
     }
 
+    /**
+     * Claims earnings from a specific auction which was hosted by the contract.
+     * @param {u64} auctionId - id of the auction
+     */
     @action('claimauctinc') // can be called by anybody
     claimAuctionIncome(auctionId: u64): void {
         // incoming token transfer will trigger payment forward to soonfinance
@@ -112,16 +131,30 @@ class PowerOfSoon extends Contract {
         sendClaimMarketBalance(this.contract);
     }
 
+    /**
+     * Cancels an expired auction with 0 bids which will return the nft(s) included in the auction.
+     * @param {u64} auctionId - id of the auction
+     * @throws if auction does not exist
+     * @throws if auction has bids
+     * @throws if auction is still running
+     * @throws if seller is not the contract
+     */
     @action('cancelauct') // can be called by anybody
-    cancelAuction(auction_id: u64): void {
-        const auction = this.amAuctions.requireGet(auction_id, ERROR_AUCTION_NOT_EXISTS);
+    cancelAuction(auctionId: u64): void {
+        const auction = this.amAuctions.requireGet(auctionId, ERROR_AUCTION_NOT_EXISTS);
         check(auction.end_time < currentTimeSec(), ERROR_AUCTION_STILL_RUNNING);
         check(auction.seller == this.contract, ERROR_INVALID_AUCTION_SELLER);
         check(auction.current_bidder == EMPTY_NAME, ERROR_AUCTION_HAS_BIDS);
         // incoming NFT transfer will automatically trigger a new auction in case of a silver spot
-        sendCancelAuction(this.contract, auction_id);
+        sendCancelAuction(this.contract, auctionId);
     }
 
+    /**
+     * Mints a soon spot silver nft to a specific account with a memo.
+     * @param {Name} recipient - account that will receive the nft
+     * @param {string} memo - reason for the free mint
+     * @throws if authorization of contract is missing
+     */
     @action('mintfreespot')
     mintSilverSpot(recipient: Name, memo: string): void {
         requireAuth(this.contract);
@@ -139,6 +172,11 @@ class PowerOfSoon extends Contract {
         );
     }
 
+    /**
+     * Mints a soon spot silver nft and triggers an auction for it.
+     * @param {u32} duration - duration of the auction in seconds
+     * @throws if authorization of contract is missing
+     */
     @action('mintauctspot')
     mintAndAuctionSpot(duration: u32): void {
         requireAuth(this.contract);
@@ -159,6 +197,13 @@ class PowerOfSoon extends Contract {
         sendAuctionLatestSilverSpot(this.contract, duration);
     }
 
+    /**
+     * Auctions the last minted soon spot silver nft at the configured USD price.
+     * It will be sold in XPR and the price is determined via oracle price feed.
+     * @param {u32} duration - duration of the auction in seconds
+     * @throws if authorization of contract is missing
+     * @throws if the last minted nft of the contract account is not a soon spot silver nft
+     */
     @action('auctlatest')
     auctionLatestSilverSpot(duration: u32): void {
         requireAuth(this.contract);
@@ -172,7 +217,10 @@ class PowerOfSoon extends Contract {
         this.startAuction(latestAsset!.asset_id, startingPrice, duration);
     }
 
-    // handle transfer notification
+    /**
+     * Handles an incoming transfer notification and performs auction and token forwarding logic.
+     * @throws if the incoming nft transfer from soonmarket is invalid
+     */
     @action('transfer', notify)
     onTransfer(): void {
         // notification comes from atomicassets
@@ -194,7 +242,7 @@ class PowerOfSoon extends Contract {
                     );
                     const xprUsdPrice = this.getAndCheckXprUsdPrice();
                     if (ACTION_BURN_MINT_AUCTION == actionParams.memo) {
-                        this.burnMintAuction(actionParams.asset_ids[0], xprUsdPrice);
+                        this.burnMintAuction(actionParams.asset_ids[0]);
                     } else {
                         const memoSplit = actionParams.memo.split(' ');
                         check(memoSplit.length == 2, ERROR_INVALID_MEMO);
@@ -237,6 +285,12 @@ class PowerOfSoon extends Contract {
         }
     }
 
+    /**
+     * Retrieves and checks the XPR/USD price from the configured oracle feed.
+     * @returns {f64} last aggregated USD price of XPR
+     * @throws if the price feed name does not match
+     * @throws if the USD price is <= 0
+     */
     getAndCheckXprUsdPrice(): f64 {
         const globals = this.globalsSingleton.get();
         const xprUsdFeed = this.oraclesFeedTable.requireGet(
@@ -250,6 +304,11 @@ class PowerOfSoon extends Contract {
         return xprUsdPrice;
     }
 
+    /**
+     * Returns the starting price in XPR based on the configured starting price in USD.
+     * @param {f64} xprUsdPrice - USD rate of XPR
+     * @returns {Asset} XPR amount
+     */
     getSilverSpotStartingPrice(xprUsdPrice: f64): Asset {
         const startingPriceFloat: i64 = <i64>(
             Math.round((this.globalsSingleton.get().silverAuctStartPriceUsd * 10000) / xprUsdPrice)
@@ -257,7 +316,11 @@ class PowerOfSoon extends Contract {
         return new Asset(startingPriceFloat, XPR_SYMBOL);
     }
 
-    burnMintAuction(nftId: u64, xprUsdPrice: f64): void {
+    /**
+     * Burns the soon spot silver nft used for promotion, mints a new one and triggers the auction for it.
+     * @param {u64} nftId - asset id of the soon spot silver nft to burn
+     */
+    burnMintAuction(nftId: u64): void {
         const asset = new TableStore<Assets>(ATOMICASSETS_CONTRACT, this.contract).requireGet(
             nftId,
             'fatal error - should never happen',
@@ -278,6 +341,12 @@ class PowerOfSoon extends Contract {
         sendAuctionLatestSilverSpot(this.contract, duration);
     }
 
+    /**
+     * Auctions the soon spot gold nft in XPR based on the configured starting price in USD.
+     * @param {u64} nftId - asset id of the soon spot gold nft
+     * @param {f64} xprUsdPrice - USD rate of XPR
+     * @param {u32} duration - duration of the auction in seconds
+     */
     auctionGoldSpot(nftId: u64, xprUsdPrice: f64, duration: u32): void {
         const startingPriceFloat: i64 = <i64>(
             Math.round((this.globalsSingleton.get().goldAuctStartPriceUsd * 10000) / xprUsdPrice)
@@ -286,6 +355,12 @@ class PowerOfSoon extends Contract {
         this.startAuction(nftId, startingPrice, duration);
     }
 
+    /**
+     * Starts an auction given the provided params, using soonmarket as maker marketplace.
+     * @param {u64} nftId - asset id of the nft to auction
+     * @param {Asset} startingPrice - starting price of the auction
+     * @param {u32} duration - duration of the auction in seconds
+     */
     startAuction(nftId: u64, startingPrice: Asset, duration: u32): void {
         sendAnnounceAuction(this.contract, [nftId], startingPrice, duration, SOONMARKET);
         sendTransferNfts(this.contract, ATOMICMARKET_CONTRACT, [nftId], 'auction');

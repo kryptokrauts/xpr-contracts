@@ -63,6 +63,11 @@ class NftWatchDao extends Contract {
     // atomicassets tables
     aaCollections: TableStore<Collections> = new TableStore<Collections>(ATOMICASSETS_CONTRACT);
 
+    /**
+     * Configures the shielding price in XPR.
+     * @param {Asset} xprPrice - price for shielding
+     * @throws if authorization of contract is missing
+     */
     @action('setshieldprc')
     setShieldingPrice(xprPrice: Asset): void {
         requireAuth(this.contract);
@@ -72,6 +77,14 @@ class NftWatchDao extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
+    /**
+     * Configures the fee distribution of the shielding costs.
+     * @param {u8} guard - guard fee percentage
+     * @param {u8} dao - dao fee percentage
+     * @param {u8} market - market fee percentage
+     * @throws if authorization of contract is missing
+     * @throws if the sum of percentages does not match 100
+     */
     @action('setfeestruct')
     setFeeDistribution(guard: u8, dao: u8, market: u8): void {
         requireAuth(this.contract);
@@ -83,6 +96,13 @@ class NftWatchDao extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
+    /**
+     * Adds a guard to the authorizedGuards in globals table.
+     * @param {Name} guard - account of the guard to authorize
+     * @throws if authorization of contract is missing
+     * @throws if the guard account does not exist
+     * @throws if the guard is already authorized
+     */
     @action('addguard')
     addAuthorizedGuard(guard: Name): void {
         requireAuth(this.contract);
@@ -93,6 +113,11 @@ class NftWatchDao extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
+    /**
+     * Removes a guard from the authorizedGuards in globals table.
+     * @param {Name} guard - account of the guard to authorize
+     * @throws if authorization of contract is missing
+     */
     @action('delguard')
     delAuthorizedGuard(guard: Name): void {
         requireAuth(this.contract);
@@ -104,6 +129,13 @@ class NftWatchDao extends Contract {
         }
     }
 
+    /**
+     * Adds a market to the list of marketplaces that support shielding in globals table.
+     * @param {Name} marketplace - account of the marketplace to add
+     * @throws if authorization of contract is missing
+     * @throws if marketplace account does not exist
+     * @throws if marketplace is already registered
+     */
     @action('addmarket')
     addMarket(marketplace: Name): void {
         requireAuth(this.contract);
@@ -114,6 +146,17 @@ class NftWatchDao extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
+    /**
+     * Reports a collection to be added to the blacklist.
+     * Adds a new entry to the blacklistrep table.
+     * @param {Name} collection - name/id of the collection to be added to report for blacklist
+     * @param {Name} reporter - account of the reporter
+     * @param {string} reason - reason why the collection should be blacklisted
+     * @throws if authorization of reporter is missing
+     * @throws if collection does not exist
+     * @throws if collection is already blacklisted
+     * @throws if collection is already reported
+     */
     @action('report')
     reportCollection(collection: Name, reporter: Name, reason: string): void {
         requireAuth(reporter);
@@ -124,6 +167,19 @@ class NftWatchDao extends Contract {
         this.blacklistReports.store(report, reporter); // reporter will pay the ram
     }
 
+    /**
+     * Confirms a reported collection.
+     * Removes the entry in the blacklistrep table.
+     * Adds a new entry in the blacklist table.
+     * Increments the blacklist count in globals table.
+     * Triggers logging of the new blacklist entry.
+     * @param {Name} collection - name/id of the collection to be added to blacklist
+     * @param {Name} guard - account of the guard
+     * @param {string} comment - blacklisting info for the public
+     * @throws if authorization of guard is missing
+     * @throws if guard is not authorized
+     * @throws if collection is not reported
+     */
     @action('confirmrep')
     confirmCollectionReport(collection: Name, guard: Name, comment: string): void {
         requireAuth(guard);
@@ -145,12 +201,26 @@ class NftWatchDao extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
+    /**
+     * Adds a collection directly to the blacklist.
+     * Adds a new entry to the blacklist table.
+     * Increments the blacklist count in globals table.
+     * Triggers logging of the new blacklist entry.
+     * @param {Name} collection - name/id of the collection to be added to blacklist
+     * @param {Name} guard - account of the guard
+     * @param {string} comment - blacklisting info for the public
+     * @throws if authorization of guard is missing
+     * @throws if guard is not authorized
+     * @throws if collection does not exist
+     * @throws if collection is already blacklisted
+     */
     @action('addblacklist')
     addToBlacklist(collection: Name, guard: Name, comment: string): void {
         requireAuth(guard);
-        check(this.aaCollections.exists(collection.N), ERROR_COLLECTION_NOT_EXISTS);
         const globals = this.globalsSingleton.get();
         check(globals.authorizedGuards.includes(guard), ERROR_UNAUTHORIZED_GUARD);
+        check(this.aaCollections.exists(collection.N), ERROR_COLLECTION_NOT_EXISTS);
+        check(this.blacklist.get(collection.N) == null, ERROR_COLLECTION_ALREADY_BLACKLISTED);
         const blacklistEntry = new Blacklist(collection, '', EMPTY_NAME, guard, comment, currentTimeSec());
         this.blacklist.store(blacklistEntry, this.contract);
         globals.blacklistCount++;
@@ -158,6 +228,15 @@ class NftWatchDao extends Contract {
         sendLogNewBlacklistEntry(this.contract, collection, EMPTY_NAME, '', guard, comment);
     }
 
+    /**
+     * Logs a new blacklist entry.
+     * @param {Name} collection - name/id of the collection to be added to blacklist
+     * @param {Name} reporter - account of the reporter
+     * @param {string} reportReason - reason for reporting
+     * @param {Name} guard - account of the guard
+     * @param {string} guardComment - blacklisting info for the public
+     * @throws if authorization of contract is missing
+     */
     @action('lognewblist')
     logNewBlacklistEntry(
         collection: Name,
@@ -169,6 +248,16 @@ class NftWatchDao extends Contract {
         requireAuth(this.contract);
     }
 
+    /**
+     * Rejects a blacklist report.
+     * Removes the entry from blacklistrep table.
+     * Triggers logging of report rejection.
+     * @param {Name} collection - name/id of the collection where blacklist report was rejected
+     * @param {Name} guard - account of the guard
+     * @param {string} comment - rejection info for the public
+     * @throws if authorization of guard is missing
+     * @throws if collection is not reported
+     */
     @action('rejectreport')
     rejectCollectionReport(collection: Name, guard: Name, comment: string): void {
         requireAuth(guard);
@@ -179,6 +268,15 @@ class NftWatchDao extends Contract {
         this.blacklistReports.remove(report); // clean the report table
     }
 
+    /**
+     * Logs a report rejection.
+     * @param {Name} collection - name/id of the collection to be added to blacklist
+     * @param {Name} reporter - account of the reporter
+     * @param {string} reportReason - reason for reporting
+     * @param {Name} guard - account of the guard
+     * @param {string} guardComment - rejection info for the public
+     * @throws if authorization of contract is missing
+     */
     @action('logreportrej')
     logReportRejection(
         collection: Name,
@@ -190,6 +288,16 @@ class NftWatchDao extends Contract {
         requireAuth(this.contract);
     }
 
+    /**
+     * Removes collection from blacklist.
+     * Decrements the blacklist count in globals table.
+     * Triggers logging of blacklist deletion.
+     * @param {Name} collection - name/id of the collection to remove
+     * @param {Name} guard - account of the guard
+     * @param {string} comment - deletion info for the public
+     * @throws if authorization of guard is missing
+     * @throws if collection is not blacklisted
+     */
     @action('delblacklist')
     deleteFromBlacklist(collection: Name, guard: Name, comment: string): void {
         requireAuth(guard);
@@ -202,11 +310,35 @@ class NftWatchDao extends Contract {
         sendLogBlacklistDeletion(this.contract, collection, guard, comment);
     }
 
+    /**
+     * Logs a blacklist deletion.
+     * @param {Name} collection - name/id of the collection that was removed
+     * @param {Name} guard - account of the guard
+     * @param {string} guardComment - deletion info for the public
+     * @throws if authorization of contract is missing
+     */
     @action('logblistldel')
     logBlacklistDeletion(collection: Name, guard: Name, guardComment: string): void {
         requireAuth(this.contract);
     }
 
+    /**
+     * Request shielding for a collection.
+     * Adds an entry to the shieldingreq table.
+     * Forwards portion of the shielding costs to the marketplace where the request was submitted from.
+     * @param {Name} collection - name/id of the collection where blacklist report was rejected
+     * @param {Name} requester - account of the requester
+     * @param {Name} requestMarketplace - account of the marketplace that was used to request shielding
+     * @param {boolean} skipBasicCheck - whether the basic check shall be skipped
+     * @param {string} skipReason - reason why basic check shall be skipped
+     * @throws if authorization of requester is missing
+     * @throws if collection is does not exist
+     * @throws if the provided marketplace is not supported
+     * @throws if the collection is already blacklisted
+     * @throws if the collection is already reported
+     * @throws if the collection is already shielded
+     * @throws if shielding is already requested for the collection
+     */
     @action('reqshielding')
     requestShielding(
         collection: Name,
@@ -252,6 +384,20 @@ class NftWatchDao extends Contract {
         this.shieldingRequests.store(shieldingRequest, requester);
     }
 
+    /**
+     * Confirms a shielding for a collection.
+     * Removes the entry in the shieldingreq table.
+     * Forwards a portion of the shielding costs to the guard.
+     * Adds a new entry in the shielding table.
+     * Increments the shield count in globals table.
+     * Triggers logging of the new shielding entry.
+     * @param {Name} collection - name/id of the collection to be added to shieldings
+     * @param {Name} guard - account of the guard
+     * @param {string} reportCid - ipfs hash/cid of the shielding report
+     * @throws if authorization of guard is missing
+     * @throws if guard is not authorized
+     * @throws if shielding is not requested for the collection
+     */
     @action('confshield')
     confirmShielding(collection: Name, guard: Name, reportCid: string): void {
         requireAuth(guard);
@@ -274,6 +420,24 @@ class NftWatchDao extends Contract {
         );
     }
 
+    /**
+     * Adds a collection directly to the shieldings.
+     * Adds a new entry to the shieldings table.
+     * Increments the shield count in globals table.
+     * Triggers logging of the new shielding entry.
+     * @param {Name} collection - name/id of the collection to be added to shieldings
+     * @param {Name} guard - account of the guard
+     * @param {string} skipReason - skip reason for the public
+     * @param {string} reportCid - ipfs hash/cid of the shielding report
+     * @throws if authorization of guard is missing
+     * @throws if guard is not authorized
+     * @throws if collection does not exist
+     * @throws if collection is already blacklisted
+     * @throws if collection is already reported
+     * @throws if collection is already shielded
+     * @throws if shielding is already requested for the collection
+     * @throws if reportCid is invalid
+     */
     @action('addshielding')
     addShielding(collection: Name, guard: Name, skipReason: string, reportCid: string): void {
         requireAuth(guard);
@@ -292,6 +456,16 @@ class NftWatchDao extends Contract {
         sendLogNewShielding(this.contract, collection, EMPTY_NAME, true, skipReason, guard, reportCid);
     }
 
+    /**
+     * Logs a new shielding.
+     * @param {Name} collection - name/id of the collection that was shielded
+     * @param {Name} requestedBy - account of the requester
+     * @param {boolean} skipBasicCheck - info if skipping basic check was requested
+     * @param {string} skipReason - potential skip reason
+     * @param {Name} confirmedBy - account of the guard that confirmed shielding
+     * @param {string} reportCid - ipfs hash/cid of the shielding report
+     * @throws if authorization of contract is missing
+     */
     @action('lognewshield')
     logNewShieldingEntry(
         collection: Name,
@@ -304,6 +478,18 @@ class NftWatchDao extends Contract {
         requireAuth(this.contract);
     }
 
+    /**
+     * Rejects shielding for a collection.
+     * Removes the entry in the shieldingreq table.
+     * Forwards a portion of the shielding costs to the guard.
+     * Triggers logging of the shielding rejection.
+     * @param {Name} collection - name/id of the collection to be rejected
+     * @param {Name} guard - account of the guard
+     * @param {string} reportCid - ipfs hash/cid of the shielding report
+     * @throws if authorization of guard is missing
+     * @throws if guard is not authorized
+     * @throws if shielding is not requested for the collection
+     */
     @action('rejectshield')
     rejectShielding(collection: Name, guard: Name, reportCid: string): void {
         requireAuth(guard);
@@ -322,6 +508,16 @@ class NftWatchDao extends Contract {
         );
     }
 
+    /**
+     * Logs rejection of a shielding request.
+     * @param {Name} collection - name/id of the collection that was rejected
+     * @param {Name} requestedBy - account of the requester
+     * @param {boolean} skipBasicCheck - info if skipping basic check was requested
+     * @param {string} skipReason - potential skip reason
+     * @param {Name} rejectedBy - account of the guard that rejected shielding
+     * @param {string} reportCid - ipfs hash/cid of the shielding report
+     * @throws if authorization of contract is missing
+     */
     @action('logshieldrej')
     logShieldingRejection(
         collection: Name,
@@ -334,6 +530,16 @@ class NftWatchDao extends Contract {
         requireAuth(this.contract);
     }
 
+    /**
+     * Removes collection from shieldings.
+     * Decrements the shield count in globals table.
+     * Triggers logging of shielding deletion.
+     * @param {Name} collection - name/id of the collection to remove
+     * @param {Name} guard - account of the guard
+     * @param {string} comment - deletion info for the public
+     * @throws if authorization of guard is missing
+     * @throws if collection is not shielded
+     */
     @action('delshielding')
     deleteShielding(collection: Name, guard: Name, comment: string): void {
         requireAuth(guard);
@@ -346,11 +552,22 @@ class NftWatchDao extends Contract {
         sendLogShieldingDeletion(this.contract, collection, guard, comment);
     }
 
+    /**
+     * Logs deletion of a shielding.
+     * @param {Name} collection - name/id of the collection where shielding was removed
+     * @param {Name} guard - account of the guard
+     * @param {string} guardComment - deletion info for the public
+     * @throws if authorization of contract is missing
+     */
     @action('logshielddel')
     logShieldingDeletion(collection: Name, guard: Name, guardComment: string): void {
         requireAuth(this.contract);
     }
 
+    /**
+     * Handles an incoming transfer notification to check for valid deposit of shielding costs.
+     * @throws if the incoming XPR transfer has memo 'shielding' but does not match the shielding costs
+     */
     @action('transfer', notify)
     onDeposit(from: Name, to: Name, quantity: Asset, memo: string): void {
         // skip if outgoing
@@ -369,6 +586,12 @@ class NftWatchDao extends Contract {
         }
     }
 
+    /**
+     * Handles shielding review.
+     * Forwards portion of the shielding costs to the guard.
+     * Removes entry from shieldingreq table.
+     * @throws if reportCid is invalid
+     */
     handleShieldingReview(request: ShieldingRequest, guard: Name, reportCid: string): void {
         check(reportCid.startsWith('Qm') || reportCid.startsWith('bafy'), ERROR_INVALID_CID);
         const globals = this.globalsSingleton.get();
@@ -383,6 +606,11 @@ class NftWatchDao extends Contract {
         this.shieldingRequests.remove(request);
     }
 
+    /**
+     * Adds XPR balance of a user to the balances table.
+     * @param {Name} actor - account of the user to track balance
+     * @param {Asset} xpr - amount of XPR to add to the balance
+     */
     addXprBalance(actor: Name, xpr: Asset): void {
         let account = this.balances.get(actor.N);
         if (!account) {

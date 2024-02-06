@@ -72,7 +72,10 @@ class SoonMarket extends Contract {
     amAuctions: TableStore<Auctions> = new TableStore<Auctions>(ATOMICMARKET_CONTRACT);
     amBalances: TableStore<Balances> = new TableStore<Balances>(ATOMICMARKET_CONTRACT);
 
-    @action('clmktbalance') // can be called by anybody
+    /**
+     * Claims balance from atomicmarket contract.
+     */
+    @action('clmktbalance')
     claimMarketBalance(): void {
         const balancesRow = this.amBalances.requireGet(this.contract.N, ERROR_MARKET_BALANCE_NOT_FOUND);
         for (let i = 0; i < balancesRow.quantities.length; i++) {
@@ -81,6 +84,12 @@ class SoonMarket extends Contract {
         }
     }
 
+    /**
+     * Configures the SOON SPOT NFTs to handle the promotion logic.
+     * @param {u64} goldSpotId - asset id of the gold spot nft
+     * @param {u32} silverSpotTemplateId - template id of the silver spot nfts
+     * @throws if authorization of contract is missing
+     */
     @action('setspots')
     setSpots(goldSpotId: u64, silverSpotTemplateId: u32): void {
         requireAuth(this.contract);
@@ -90,6 +99,12 @@ class SoonMarket extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
+    /**
+     * Configures the promotion duration for collections when promoting with soon spot nfts
+     * @param {u32} goldPromoDuration - duration (in seconds) for gold spot promotion
+     * @param {u32} silverPromoDuration - duration (in seconds) for silver spot promotion
+     * @throws if authorization of contract is missing
+     */
     @action('setpromodur')
     setPromoDuration(goldPromoDuration: u32, silverPromoDuration: u32): void {
         requireAuth(this.contract);
@@ -99,6 +114,12 @@ class SoonMarket extends Contract {
         this.globalsSingleton.set(globals, this.contract);
     }
 
+    /**
+     * Adds a collection to the blacklist of the market
+     * @param {Name} collection - name/id of the collection to add
+     * @param {string} comment - reason for blacklisting
+     * @throws if authorization of contract is missing
+     */
     @action('addblacklist')
     addToBlacklist(collection: Name, comment: string): void {
         requireAuth(this.contract);
@@ -120,6 +141,11 @@ class SoonMarket extends Contract {
         this.collectionsBlacklist.store(blacklistRow, this.contract);
     }
 
+    /**
+     * Removes a collection from blacklist of the market
+     * @param {Name} collection - name/id of the collection to remove
+     * @throws if authorization of contract is missing
+     */
     @action('delblacklist')
     delFromBlacklist(collection: Name): void {
         requireAuth(this.contract);
@@ -132,6 +158,12 @@ class SoonMarket extends Contract {
         this.collectionsBlacklist.remove(blacklistRow);
     }
 
+    /**
+     * Adds a collection to the verified list of the market
+     * @param {Name} collection - name/id of the collection to add
+     * @param {string} comment - reason for verifying
+     * @throws if authorization of contract is missing
+     */
     @action('addverified')
     addToVerified(collection: Name, comment: string): void {
         requireAuth(this.contract);
@@ -146,6 +178,11 @@ class SoonMarket extends Contract {
         this.collectionsVerified.store(verifiedRow, this.contract);
     }
 
+    /**
+     * Removes a collection from the verified list of the market
+     * @param {Name} collection - name/id of the collection to remove
+     * @throws if authorization of contract is missing
+     */
     @action('delverified')
     delFromVerified(collection: Name): void {
         requireAuth(this.contract);
@@ -158,7 +195,10 @@ class SoonMarket extends Contract {
         this.collectionsVerified.remove(verifiedRow);
     }
 
-    // handle transfer notification
+    /**
+     * Handles an incoming transfer notification and performs promotion and token forwarding logic.
+     * @throws if the nft transfer is not a valid promotion
+     */
     @action('transfer', notify)
     onTransfer(): void {
         // notification comes from atomicassets
@@ -194,16 +234,37 @@ class SoonMarket extends Contract {
         }
     }
 
+    /**
+     * Logs a new collection promotion
+     * @param {Name} collection - name/id of the collection that is promoted
+     * @param {Name} promotedBy - account that promoted the collection
+     * @param {string} spotType - silver|gold
+     * @param {Name} promotionEnd - timestamp (seconds since epoch) when the promotion ends
+     * @throws if authorization of contract is missing
+     */
     @action('logcolpromo')
     logCollectionPromotion(collection: Name, promotedBy: Name, spotType: string, promotionEnd: u32): void {
         requireAuth(this.contract);
     }
 
+    /**
+     * Logs a new auction promotion
+     * @param {string} auctionId - id of the auction that is promoted
+     * @param {Name} promotedBy - account that promoted the auction
+     * @param {string} spotType - silver|gold
+     * @throws if authorization of contract is missing
+     */
     @action('logauctpromo')
     logAuctionPromotion(auctionId: string, promotedBy: Name, spotType: string): void {
         requireAuth(this.contract);
     }
 
+    /**
+     * Checks if the provided collection is already promoted
+     * @param {Name} collection - name/id of the collection that is about to be promoted
+     * @returns SilverSpotPromotion entry | null
+     * @throws if the collection is already promoted
+     */
     checkAndGetExistingSilverPromotion(collection: Name): SilverSpotPromotion | null {
         const existingEntry = this.silverSpotPromotions.get(collection.N);
         if (existingEntry != null) {
@@ -213,6 +274,11 @@ class SoonMarket extends Contract {
         return null;
     }
 
+    /**
+     * Checks if the nft is a valid soon spot silver nft
+     * @param {u64} spotNftId - asset id of the assumed soon spot silver nft
+     * @throws if the nft is not a soon spot silver nft
+     */
     checkValidSilverSpot(spotNftId: u64): void {
         const asset = this.aaAssets.requireGet(spotNftId, 'fatal error - should never happen');
         check(
@@ -221,11 +287,22 @@ class SoonMarket extends Contract {
         );
     }
 
+    /**
+     * Returns if the promotion type is valid
+     * @param {string} value - must be one of auction|collection
+     * @returns true|false
+     */
     isValidPromotionType(value: string): boolean {
         const validPromotionTypes = [PROMO_TYPE_AUCTION, PROMO_TYPE_COLLECTION];
         return validPromotionTypes.includes(value);
     }
 
+    /**
+     * Checks if the collection is verified.
+     * @param {Name} collection - name/id of the collection to check
+     * @throws if the collection is blacklisted by soonmarket or nftwatchdao
+     * @throws if the collection is neither verified by soonmarket, nor shielded by nftwatchdao
+     */
     checkIfVerified(collection: Name): void {
         const blacklistRow = this.collectionsBlacklist.get(collection.N);
         const nftwatchBlacklistRow = this.nftwatchBlacklist.get(collection.N);
@@ -235,11 +312,23 @@ class SoonMarket extends Contract {
         check(verifiedRow != null || shieldedRow != null, ERROR_COLLECTION_NEITHER_VERIFIED_NOR_SHIELDED);
     }
 
+    /**
+     * Validates a collection by checking its existence and calling checkIfVerified
+     * @param {Name} collection - name/id of the collection to validate
+     * @throws if the collection does not exist
+     */
     validateCollection(collection: Name): void {
         check(this.aaCollections.exists(collection.N), ERROR_COLLECTION_NOT_EXISTS);
         this.checkIfVerified(collection);
     }
 
+    /**
+     * Validates an auction by checking its existence and calling checkIfVerified
+     * @param {string} auctionId - id of the auction to validate
+     * @throws if the auction does not exist
+     * @throws if the auction is not started
+     * @throws if the auction end is too close to end (< 1 hour)
+     */
     validateAuction(auctionId: string): u32 {
         const auction = this.amAuctions.requireGet(<u64>parseInt(auctionId), ERROR_AUCTION_NOT_EXISTS);
         this.checkIfVerified(auction.collection_name);
@@ -252,6 +341,11 @@ class SoonMarket extends Contract {
         return goldSpotAuctionDuration;
     }
 
+    /**
+     * Triggers the spot promotion validation and executes additional logic.
+     * @param {string} auctionId - id of the auction to validate
+     * @throws if promoType=auction and spot nft of type silver
+     */
     validateAndHandleSpot(spotNftId: u64, promoType: string, promoTargetId: string, promotedBy: Name): void {
         const globals = this.globalsSingleton.get();
         let spotType: string = globals.goldSpotId == spotNftId ? SPOT_TYPE_GOLD : SPOT_TYPE_SILVER;

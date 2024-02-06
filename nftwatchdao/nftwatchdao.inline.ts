@@ -1,5 +1,6 @@
 import { ActionData, InlineAction, Name, PermissionLevel } from 'proton-tsc';
 
+/* LogBlacklistReview as ActionData */
 @packer
 export class LogBlacklistReview extends ActionData {
     constructor(
@@ -13,6 +14,7 @@ export class LogBlacklistReview extends ActionData {
     }
 }
 
+/* LogRevocation as ActionData */
 @packer
 export class LogRevocation extends ActionData {
     constructor(
@@ -24,6 +26,7 @@ export class LogRevocation extends ActionData {
     }
 }
 
+/* LogShieldingReview as ActionData */
 @packer
 export class LogShieldingReview extends ActionData {
     constructor(
@@ -38,6 +41,15 @@ export class LogShieldingReview extends ActionData {
     }
 }
 
+/**
+ * Send the lognewblist action of the contract to the blockchain
+ * @param {Name} contractAndActor - contract and actor of the action
+ * @param {Name} collection - name/id of the collection that was added to blacklist
+ * @param {Name} reporter - account of the reporter
+ * @param {string} reportReason - reason for reporting the collection
+ * @param {Name} guard - account of the guard
+ * @param {string} guardComment - blacklisting info for the public
+ */
 export function sendLogNewBlacklistEntry(
     contractAndActor: Name,
     collection: Name,
@@ -52,6 +64,15 @@ export function sendLogNewBlacklistEntry(
     action.send(actionParams);
 }
 
+/**
+ * Send the logreportrej action of the contract to the blockchain
+ * @param {Name} contractAndActor - contract and actor of the action
+ * @param {Name} collection - name/id of the collection that was rejected
+ * @param {Name} reporter - account of the reporter
+ * @param {string} reportReason - reason for reporting the collection
+ * @param {Name} guard - account of the guard
+ * @param {string} guardComment - rejection info for the public
+ */
 export function sendLogReportRejection(
     contractAndActor: Name,
     collection: Name,
@@ -66,6 +87,13 @@ export function sendLogReportRejection(
     action.send(actionParams);
 }
 
+/**
+ * Send the logblistldel action of the contract to the blockchain
+ * @param {Name} contractAndActor - contract and actor of the action
+ * @param {Name} collection - name/id of the collection that was removed from blacklist
+ * @param {Name} guard - account of the guard
+ * @param {string} guardComment - deletion info for the public
+ */
 export function sendLogBlacklistDeletion(
     contractAndActor: Name,
     collection: Name,
@@ -78,6 +106,16 @@ export function sendLogBlacklistDeletion(
     action.send(actionParams);
 }
 
+/**
+ * Send the lognewshield action of the contract to the blockchain
+ * @param {Name} contractAndActor - contract and actor of the action
+ * @param {Name} collection - name/id of the collection that was shielded
+ * @param {Name} requestedBy - account of the requester
+ * @param {boolean} skipBasicCheck - info if skip of basic check was requested
+ * @param {string} skipReason - reason why basic check was skipped
+ * @param {Name} confirmedBy - account of the guard
+ * @param {string} reportCid - ipfs hash/cid of the shielding report
+ */
 export function sendLogNewShielding(
     contractAndActor: Name,
     collection: Name,
@@ -100,6 +138,16 @@ export function sendLogNewShielding(
     action.send(actionParams);
 }
 
+/**
+ * Send the logshieldrej action of the contract to the blockchain
+ * @param {Name} contractAndActor - contract and actor of the action
+ * @param {Name} collection - name/id of the collection that was rejected
+ * @param {Name} requestedBy - account of the requester
+ * @param {boolean} skipBasicCheck - info if skip of basic check was requested
+ * @param {string} skipReason - reason why basic check should be skipped
+ * @param {Name} rejectedBy - account of the guard
+ * @param {string} reportCid - ipfs hash/cid of the shielding report
+ */
 export function sendLogShieldRejection(
     contractAndActor: Name,
     collection: Name,
@@ -122,6 +170,13 @@ export function sendLogShieldRejection(
     action.send(actionParams);
 }
 
+/**
+ * Send the logshielddel action of the contract to the blockchain
+ * @param {Name} contractAndActor - contract and actor of the action
+ * @param {Name} collection - name/id of the collection that was removed from shieldings
+ * @param {Name} guard - account of the guard
+ * @param {string} guardComment - deletion info for the public
+ */
 export function sendLogShieldingDeletion(
     contractAndActor: Name,
     collection: Name,
