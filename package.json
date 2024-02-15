@@ -10,8 +10,6 @@
         "build:powerofsoon": "proton-asc ./powerofsoon/powerofsoon.contract.ts",
         "build:nftwatchdao": "proton-asc ./nftwatchdao/nftwatchdao.contract.ts",
         "test": "run-p test:*",
-        "test:soonmarket": "mocha -s 250 ./soonmarket/*.spec.ts -r ts-node/register --timeout 10000",
-        "test:powerofsoon": "mocha -s 250 ./powerofsoon/*.spec.ts -r ts-node/register --timeout 10000",
         "test:nftwatchdao": "mocha -s 250 ./nftwatchdao/*.spec.ts -r ts-node/register --timeout 10000",
         "format": "prettier -w .",
         "format:check": "prettier -c .",
